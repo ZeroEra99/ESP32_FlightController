@@ -13,7 +13,7 @@ Receiver::Receiver(int *pins) {
 
 int* Receiver::read() {
   // Leggi i valori dal ricevitore
-  int data[IA6B_CHANNELS];
+  static int data[IA6B_CHANNELS];
   for (int i = 0; i < IA6B_CHANNELS; i++) {
     data[i] = analog_input[i].getValue();
   }

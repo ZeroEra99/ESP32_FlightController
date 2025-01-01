@@ -16,8 +16,6 @@ private:
 public:
   Aircraft();
   FlightData read_imu();
-
-  FlightData flight_data;
 };
 
 #endif // AIRCRAFT_H

@@ -3,10 +3,6 @@
 
 #include "CONFIG.h"
 
-#define EULER_ANGLES_SIZE 3
-#define ANGULAR_VELOCITIES_SIZE 3
-#define QUATERNION_SIZE 4
-
 enum Axis
 {
   X,
@@ -15,14 +11,53 @@ enum Axis
   W
 };
 
+enum FlightDataInput
+{
+  EULER_ANGLES,
+  ANGULAR_VELOCITIES,
+  QUATERNION
+};
 
-enum PilotInput{
+enum PilotInput
+{
   ROLL,
   PITCH,
   THROTTLE,
   YAW,
   AUX1,
   AUX2
+};
+
+struct FlightData
+{
+  float velocity[EULER_DIM];
+  float acceleration[EULER_DIM];
+  float angles[EULER_DIM];
+  float angular_velocities[EULER_DIM];
+  float quaternion[QUATERNION_DIM];
+};
+
+struct ControllerData
+{
+  float acceleration[EULER_DIM];
+  float velocity[EULER_DIM];
+  float error_angular_velocity[EULER_DIM];
+  float error_angle[EULER_DIM];
+  float error_quaternion[QUATERNION_DIM];
+  float pid_tuning_offset[EULER_DIM];
+  float pid_output[EULER_DIM];
+};
+
+struct PilotData
+{
+  float data[IA6B_CHANNELS];
+};
+
+enum PID
+{
+  KP,
+  KI,
+  KD
 };
 
 enum class Color
@@ -32,23 +67,25 @@ enum class Color
   BLUE
 };
 
-enum class LightState{
+enum class LightState
+{
   ON,
   OFF,
   BLINK
 };
 
-
-struct FlightData
+enum class STATE
 {
-  float angles[EULER_ANGLES_SIZE];
-  float angular_velocities[ANGULAR_VELOCITIES_SIZE];
-  float quaternion[QUATERNION_SIZE];
+  FAILSAFE = -1,
+  DISARMED = 0,
+  ARMED = 1
 };
 
-struct PilotData
+enum class MODE
 {
-  float data[IA6B_CHANNELS];
+  MANUAL = 0,
+  GYRO_STABILIZED = 1
 };
+
 
 #endif // DATASTRUCTURES_H

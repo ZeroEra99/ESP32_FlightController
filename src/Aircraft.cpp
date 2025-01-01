@@ -5,6 +5,5 @@ Aircraft::Aircraft() : imu(), servos{Motor(SERVO_PIN_PITCH, SERVO_MIN, SERVO_MAX
 }
 
 FlightData Aircraft::read_imu() {
-    flight_data = imu.read();
-    return flight_data;
+    return imu.read();
 }
