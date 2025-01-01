@@ -1,13 +1,13 @@
 #include <Arduino.h>
 #include "Aircraft.h"
-
-Aircraft aircraft;  // Dichiarazione dell'oggetto Aircraft
+#include "FlightController.h"
 
 void setup() {
     Serial.begin(115200);
   
 }
 
+
 void loop() {
-    // Usa i metodi di Aircraft, che a loro volta utilizzano i suoi membri privati
+    // put your main code here, to run repeatedly:
 }
