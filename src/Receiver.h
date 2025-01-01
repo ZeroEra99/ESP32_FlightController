@@ -11,7 +11,7 @@ private:
 
 public:
     Receiver(int *pins);  // Costruttore che accetta i pin
-    PilotData read();
+    int* read();
 };
 
 #endif // RECEIVER_H

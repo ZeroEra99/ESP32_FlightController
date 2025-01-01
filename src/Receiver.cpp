@@ -11,11 +11,11 @@ Receiver::Receiver(int *pins) {
 }
 
 
-PilotData Receiver::read() {
+int* Receiver::read() {
   // Leggi i valori dal ricevitore
-  PilotData pilot_data;
+  int data[IA6B_CHANNELS];
   for (int i = 0; i < IA6B_CHANNELS; i++) {
-    if(pilot_data.data[i] = analog_input[i].getValue()==0)pilot_data.data[i]=NAN;
+    data[i] = analog_input[i].getValue();
   }
-  return pilot_data;
+  return data;
 }

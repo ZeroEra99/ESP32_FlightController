@@ -7,16 +7,6 @@
 #define ANGULAR_VELOCITIES_SIZE 3
 #define QUATERNION_SIZE 4
 
-/**
- * Esempiodi enum class
- */
-enum class Mode
-{
-  MANUAL,
-  SEMI_AUTOMATIC,
-  AUTOMATIC
-};
-
 enum Axis
 {
   X,
@@ -27,10 +17,12 @@ enum Axis
 
 
 enum PilotInput{
-  THROTTLE,
-  PITCH,
   ROLL,
-  YAW
+  PITCH,
+  THROTTLE,
+  YAW,
+  AUX1,
+  AUX2
 };
 
 enum class Color
