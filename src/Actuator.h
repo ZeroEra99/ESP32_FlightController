@@ -2,12 +2,20 @@
 #define ACTUATOR_H
 
 #include "DataStructures.h"
+#include <ESP32Servo.h>
 
-class Actuator {
+
+class Actuator
+{
+protected:
+  int pin, analog_min, analog_max;
+  Servo actuator;
+
 public:
-    Actuator( );
-    virtual void setup() = 0;
+  Actuator(int pin, int analog_min, int analog_max);
+  virtual void setup() = 0;
+  virtual void write(int value) = 0;
+  
 };
 
-
-#endif  // ACTUATOR_H
+#endif // ACTUATOR_H

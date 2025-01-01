@@ -5,11 +5,11 @@
 
 class BNO055 {
 private:
-  void bno055_setup();
+  void setup();
   // Dati
 public:
   BNO055();
-  void bno055_read();
+  FlightData read();
 };
 
 #endif  // BNO055_H
