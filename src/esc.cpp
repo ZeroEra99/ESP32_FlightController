@@ -1,18 +1,21 @@
 #include "ESC.h"
 
-ESC::ESC(int pin, int analog_min, int analog_max) : Actuator(pin, analog_min, analog_max) {
-
+ESC::ESC(int pin, int pwm_min, int pwm_max) : Actuator(pin)
+{
+  Serial.print("ESC ");
+  Serial.print(pin);
+  Serial.print(" setup starting.\n");
+  pwm_min = pwm_min;
+  pwm_max = pwm_max;
+  esc.attach(pin);
+  esc.writeMicroseconds(pwm_min);
+  Serial.print("ESC ");
+  Serial.print(pin);
+  Serial.print(" setup complete.\n");
 }
 
-void ESC::setup() {
-  // Setup dell'ESC
-    Serial.print("ESC ");Serial.print(pin);Serial.print(" setup starting.\n");
-    actuator.attach(pin, analog_min, analog_max);
-    actuator.writeMicroseconds(analog_min);
-    Serial.print("ESC ");Serial.print(pin);Serial.print(" setup complete.\n");
-}
-
-void ESC::write(int value) {
+void ESC::write(int value)
+{
   // Scrittura dell'ESC
-  actuator.writeMicroseconds(value);
+  esc.writeMicroseconds(value);
 }

@@ -33,6 +33,19 @@ enum PilotInput{
   YAW
 };
 
+enum class Color
+{
+  RED,
+  GREEN,
+  BLUE
+};
+
+enum class LightState{
+  ON,
+  OFF,
+  BLINK
+};
+
 
 struct FlightData
 {

@@ -1,19 +1,22 @@
 #include "Motor.h"
 
-Motor::Motor(int pin, int analog_min, int analog_max) : Actuator(pin, analog_min, analog_max)
+Motor::Motor(int pin, int angle_min, int angle_max) : Actuator(pin)
 {
+    Serial.print("Servo ");
+    Serial.print(pin);
+    Serial.print(" setup starting.\n");
+
+    angle_min = angle_min;
+    angle_max = angle_max;
+    servo.attach(pin);
+    Serial.print("Servo ");
+    Serial.print(pin);
+    Serial.print(" setup complete.\n");
 }
 
-void Motor::setup()
-{
-    // Setup del servomotore
-    Serial.print("Motor ");Serial.print(pin);Serial.print(" setup starting.\n");
-    actuator.attach(pin);
-    Serial.print("Motor ");Serial.print(pin);Serial.print(" setup complete.\n");
-}
 
 void Motor::write(int value)
 {
     // Scrittura del servomotore
-    actuator.write(value);
+    servo.write(value);
 }
