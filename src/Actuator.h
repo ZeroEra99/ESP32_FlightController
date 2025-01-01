@@ -8,12 +8,10 @@
 class Actuator
 {
 protected:
-  int pin, analog_min, analog_max;
-  Servo actuator;
+  int pin;
 
 public:
-  Actuator(int pin, int analog_min, int analog_max);
-  virtual void setup() = 0;
+  Actuator(int pin);
   virtual void write(int value) = 0;
   
 };
