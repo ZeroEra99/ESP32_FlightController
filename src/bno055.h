@@ -1,5 +1,5 @@
-#ifndef BNO055_H
-#define BNO055_H
+#ifndef BNO_055_H
+#define BNO_055_H
 
 #include "DataStructures.h"
 
@@ -12,4 +12,4 @@ public:
   FlightData read();
 };
 
-#endif  // BNO055_H
+#endif  // BNO_055_H

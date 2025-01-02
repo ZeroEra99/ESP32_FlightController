@@ -72,10 +72,10 @@ void FlightController::input()
     pilot_data[THROTTLE] = pwm_to_digital(pilot_data[THROTTLE], PWM_MIN, PWM_MAX, THROTTLE_MIN, THROTTLE_MAX);
     pilot_data[YAW] = pwm_to_digital(pilot_data[YAW], PWM_MIN, PWM_MAX, -YAW_MAX, YAW_MAX);
     pilot_data[AUX1] = map(pilot_data[AUX1], PWM_MIN, PWM_MAX, 0, 2);
-    pilot_data[AUX2] = pwm_to_digital(pilot_data[AUX2], PWM_MIN, PWM_MAX, 0, PID_TUNING_MAX_VALUE);
+    pilot_data[AUX2] = pwm_to_digital(pilot_data[AUX2], PWM_MIN, PWM_MAX, 0, PID_MAX_OFFSET);
     // Salva i dati dell'utente
     for (int i = 0; i < EULER_DIM; i++)
-        data.user_data[i] = pilot_data[i];
+        data.user_input[i] = pilot_data[i];
     switch (pilot_data[AUX1])
     {
     case 0:
@@ -94,20 +94,17 @@ void FlightController::input()
 
     // Leggi i dati dall'IMU
     FlightData imu_data = aircraft.read_imu();
-    // Salva i dati
-    data.velocity[X] = imu_data.velocity[X];
-    data.velocity[Y] = imu_data.velocity[Y];
-    data.velocity[Z] = imu_data.velocity[Z];
-    data.acceleration[X] = imu_data.acceleration[X];
-    data.acceleration[Y] = imu_data.acceleration[Y];
-    data.acceleration[Z] = imu_data.acceleration[Z];
-    data.angular_velocities[X] = imu_data.angular_velocities[X];
-    data.angular_velocities[Y] = imu_data.angular_velocities[Y];
-    data.angular_velocities[Z] = imu_data.angular_velocities[Z];
-    data.quaternion[W] = imu_data.quaternion[W];
-    data.quaternion[X] = imu_data.quaternion[X];
-    data.quaternion[Y] = imu_data.quaternion[Y];
-    data.quaternion[Z] = imu_data.quaternion[Z];
+    // Copia dei dati di velocità e accelerazione
+    for (int i = 0; i < EULER_DIM; i++)
+    {
+        data.velocity[i] = imu_data.velocity[i];
+        data.acceleration[i] = imu_data.acceleration[i];
+        data.gyro[i] = imu_data.gyro[i];
+    }
+
+    // Copia dei dati di attitudine
+    for (int i = 0; i < QUATERNION_DIM; i++)
+        data.attitude[i] = imu_data.attitude[i];
 }
 
 void FlightController::compute_data(double dt)
@@ -118,39 +115,39 @@ void FlightController::compute_data(double dt)
     {
         for (int i = 0; i < EULER_DIM; i++)
         {
-            data.error_angular_velocity[i] = data.user_data[i] - data.angular_velocities[i];
+            data.error_gyro[i] = data.user_input[i] - data.gyro[i];
         }
     }
 
     // Modalità GUIDED: Modifica del setpoint quaternioni e calcolo dell'errore
-    if (mode == MODE::GUIDED)
+    if (mode == MODE::ATTITUDE_CONTROL)
     {
 
         for (int i = 0; i < 3; i++) // Itera su ROLL, PITCH, YAW
         {
-            if (data.user_data[i] != 0)
+            if (data.user_input[i] != 0)
             {
                 float q_rotation[4], q_temp[4];
 
                 // Crea il quaternione per la rotazione
-                quaternion_from_axis_angle(axis[i], data.user_data[i] * dt, q_rotation);
+                quaternion_from_axis_angle(axis[i], data.user_input[i] * dt, q_rotation);
 
                 // Moltiplica il setpoint quaternione con il quaternione di rotazione
-                quaternion_multiply(q_rotation, data.setpoint_quaternion, q_temp);
+                quaternion_multiply(q_rotation, data.setpoint_attitude, q_temp);
 
                 // Aggiorna il setpoint quaternione
-                memcpy(data.setpoint_quaternion, q_temp, sizeof(q_temp));
+                memcpy(data.setpoint_attitude, q_temp, sizeof(q_temp));
             }
         }
-        quaternion_normalize(data.setpoint_quaternion); // Normalizza il setpoint
+        quaternion_normalize(data.setpoint_attitude); // Normalizza il setpoint
 
         // Calcolo della differenza tra setpoint e IMU quaternione
         float q_conjugate[QUATERNION_DIM];
         float q_error[QUATERNION_DIM];
-        quaternion_conjugate(data.quaternion, q_conjugate);                  // Coniugato del quaternione IMU
-        quaternion_multiply(data.setpoint_quaternion, q_conjugate, q_error); // Differenza tra quaternioni
+        quaternion_conjugate(data.attitude, q_conjugate);                  // Coniugato del quaternione IMU
+        quaternion_multiply(data.setpoint_attitude, q_conjugate, q_error); // Differenza tra quaternioni
         for (int i = 0; i < QUATERNION_DIM; i++)
-            data.error_angle[i] = q_error[i];
+            data.error_attitude[i] = q_error[i];
         return;
     }
 }
@@ -174,22 +171,22 @@ void FlightController::control()
         // PID velocità angolare già implementato
         for (int i = 0; i < EULER_DIM; i++)
         {
-            float pid_output = pid_angular_velocity[i].pid(data.error_angular_velocity[i], dt);
+            float pid_output = pid_gyro[i].pid(data.error_gyro[i], dt);
             data.pid_output[i] = pid_output;
         }
     }
-    else if (mode == MODE::GUIDED)
+    else if (mode == MODE::ATTITUDE_CONTROL)
     {
         // Calcolo PID per i quaternioni
         float pid_output_quaternion[QUATERNION_DIM - 1];
         for (int i = 1; i < QUATERNION_DIM; i++) // Ignora la componente scalare (q[0])
-            pid_output_quaternion[i - 1] = pid_angle[i - 1].pid(data.error_angle[i], dt);
+            pid_output_quaternion[i - 1] = pid_attitude[i - 1].pid(data.error_attitude[i], dt);
 
         // Passa l'output del PID quaternione come input al PID velocità angolare
         for (int i = 0; i < EULER_DIM; i++)
         {
             float angular_setpoint = pid_output_quaternion[i];
-            float pid_output = pid_angular_velocity[i].pid(angular_setpoint - data.angular_velocities[i], dt);
+            float pid_output = pid_gyro[i].pid(angular_setpoint - data.gyro[i], dt);
             data.pid_output[i] = pid_output;
         }
     }
@@ -199,12 +196,10 @@ void FlightController::output()
 {
     // Mappa i valori digitali in valori PWM
     int servo_values[EULER_DIM];
-    servo_values[X] = digital_to_pwm(data.user_data[ROLL], -ROLL_MAX, ROLL_MAX, SERVO_MIN, SERVO_MAX);
-    int throttle_value = digital_to_pwm(data.user_data[THROTTLE], THROTTLE_MIN, THROTTLE_MAX, PWM_MIN, PWM_MAX);
+    servo_values[X] = digital_to_pwm(data.user_input[ROLL], -ROLL_MAX, ROLL_MAX, SERVO_MIN, SERVO_MAX);
+    int throttle_value = digital_to_pwm(data.user_input[THROTTLE], THROTTLE_MIN, THROTTLE_MAX, PWM_MIN, PWM_MAX);
     // Scrivi i valori sugli attuatori
     for (int i = 0; i < EULER_DIM; i++)
         aircraft.servos[i].write(servo_values[i]);
     aircraft.throttle.write(throttle_value);
 }
-
-

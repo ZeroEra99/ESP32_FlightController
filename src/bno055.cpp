@@ -33,14 +33,14 @@ FlightData BNO055::read() {
   static double xVel = 0, yVel = 0, zVel = 0; // Velocità integrate
   FlightData data;
 
-  data.angular_velocities[X] = angular_velocities.x();
-  data.angular_velocities[Y] = angular_velocities.y();
-  data.angular_velocities[Z] = angular_velocities.z();
+  data.gyro[X] = angular_velocities.x();
+  data.gyro[Y] = angular_velocities.y();
+  data.gyro[Z] = angular_velocities.z();
 
-  data.quaternion[W] = quaternion.w();
-  data.quaternion[X] = quaternion.x();
-  data.quaternion[Y] = quaternion.y();
-  data.quaternion[Z] = quaternion.z();
+  data.attitude[W] = quaternion.w();
+  data.attitude[X] = quaternion.x();
+  data.attitude[Y] = quaternion.y();
+  data.attitude[Z] = quaternion.z();
 
   // Calcola velocità e accelerazione
   data.acceleration[X] = linearAccelData.acceleration.x;

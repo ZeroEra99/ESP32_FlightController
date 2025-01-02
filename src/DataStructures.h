@@ -1,21 +1,24 @@
-#ifndef DATASTRUCTURES_H
-#define DATASTRUCTURES_H
+#ifndef DATA_STRUCTURES_H
+#define DATA_STRUCTURES_H
 
 #include "CONFIG.h"
+#include "HardwareParameters.h"
 
+/* ========================
+ *   COSTANTI
+ * ======================== */
+#define QUATERNION_DIM 4
+#define EULER_DIM 3
+
+/* ========================
+ *   ENUMERAZIONI
+ * ======================== */
 enum Axis
 {
+  W,
   X,
   Y,
-  Z,
-  W
-};
-
-enum FlightDataInput
-{
-  EULER_ANGLES,
-  ANGULAR_VELOCITIES,
-  QUATERNION
+  Z
 };
 
 enum PilotInput
@@ -26,36 +29,6 @@ enum PilotInput
   YAW,
   AUX1,
   AUX2
-};
-
-struct FlightData
-{
-  float velocity[EULER_DIM];
-  float acceleration[EULER_DIM];
-  float angles[EULER_DIM];
-  float angular_velocities[EULER_DIM];
-  float quaternion[QUATERNION_DIM];
-};
-
-struct ControllerData
-{
-  float user_data[IA6B_CHANNELS];
-  float setpoint_quaternion[QUATERNION_DIM];
-
-  float acceleration[EULER_DIM];
-  float velocity[EULER_DIM];
-  float angular_velocities[EULER_DIM];
-  float quaternion[QUATERNION_DIM];
-
-  float error_angular_velocity[EULER_DIM];
-  float error_angle[QUATERNION_DIM];
-  float pid_tuning_offset[EULER_DIM];
-  float pid_output[EULER_DIM];
-};
-
-struct PilotData
-{
-  float data[IA6B_CHANNELS];
 };
 
 enum PID
@@ -89,9 +62,37 @@ enum class STATE
 enum class MODE
 {
   MANUAL = 0,
-  GYRO_STABILIZED = 1,  
-  GUIDED = 2
+  GYRO_STABILIZED = 1,
+  ATTITUDE_CONTROL = 2,
+  AUTO = 3
 };
 
+/* ========================
+ *   STRUTTURE DATI
+ * ======================== */
+struct FlightData
+{
+  float velocity[EULER_DIM];
+  float acceleration[EULER_DIM];
+  float gyro[EULER_DIM];
+  float attitude[QUATERNION_DIM];
+  float position[EULER_DIM];
+};
+
+struct ControllerData
+{
+  float user_input[IA6B_CHANNELS];
+  float setpoint_attitude[QUATERNION_DIM];
+
+  float acceleration[EULER_DIM];
+  float velocity[EULER_DIM];
+  float gyro[EULER_DIM];
+  float attitude[QUATERNION_DIM];
+
+  float error_gyro[EULER_DIM];
+  float error_attitude[QUATERNION_DIM];
+  float pid_tuning_offset[EULER_DIM];
+  float pid_output[EULER_DIM];
+};
 
 #endif // DATASTRUCTURES_H

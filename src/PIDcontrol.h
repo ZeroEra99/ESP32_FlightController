@@ -1,5 +1,5 @@
-#ifndef PIDCONTROL_H
-#define PIDCONTROL_H
+#ifndef PID_CONTROL_H
+#define PID_CONTROL_H
 
 class PIDcontrol
 {
@@ -12,4 +12,4 @@ public:
     double pid(double error, double dt);
 };
 
-#endif // PIDCONTROL_H
+#endif // PID_CONTROL_H
