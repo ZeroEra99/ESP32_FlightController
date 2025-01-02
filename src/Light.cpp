@@ -1,7 +1,7 @@
 /**
  * @file Light.cpp
  * @brief Implementazione della classe Light.
- * 
+ *
  * Questo file contiene l'implementazione delle funzioni della classe Light,
  * utilizzata per controllare un LED con diverse modalità, tra cui accensione,
  * spegnimento e lampeggio.
@@ -11,10 +11,10 @@
 
 /**
  * @brief Costruttore della classe Light.
- * 
+ *
  * Inizializza un LED associato a un determinato pin hardware, specificando
  * il colore e impostandolo nello stato OFF iniziale.
- * 
+ *
  * @param pin Il pin hardware a cui il LED è collegato.
  * @param color Il colore del LED.
  */
@@ -36,10 +36,10 @@ Light::Light(int pin, Color color) : Actuator(pin)
 
 /**
  * @brief Imposta lo stato del LED (ON o OFF).
- * 
+ *
  * Cambia lo stato del LED a ON o OFF. Se viene richiesto il lampeggio,
  * la funzione non esegue alcuna modifica.
- * 
+ *
  * @param state Stato desiderato del LED (ON, OFF).
  */
 void Light::set_state(LightState state)
@@ -53,10 +53,10 @@ void Light::set_state(LightState state)
 
 /**
  * @brief Imposta il lampeggio del LED.
- * 
+ *
  * Configura i tempi di accensione e spegnimento per il lampeggio
  * del LED e imposta lo stato a BLINK.
- * 
+ *
  * @param blink_on Durata del periodo ON (in millisecondi).
  * @param blink_off Durata del periodo OFF (in millisecondi).
  */
@@ -69,7 +69,7 @@ void Light::set_state(int blink_on, int blink_off)
 
 /**
  * @brief Aggiorna lo stato del LED.
- * 
+ *
  * Controlla e aggiorna il comportamento del LED in base al suo stato attuale.
  * Per il lampeggio, utilizza un approccio non bloccante basato su millis().
  */

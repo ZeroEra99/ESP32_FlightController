@@ -1,4 +1,5 @@
 #include "Actuator.h"
 
-Actuator::Actuator(int pin) : pin(pin) {
+Actuator::Actuator(int pin) : pin(pin)
+{
 }

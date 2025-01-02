@@ -35,21 +35,6 @@ FlightController::FlightController() : esc(ESC(ESC_PIN, PWM_MIN, PWM_MAX)), serv
 }
 
 /**
- * @brief Esegue il ciclo principale di controllo.
- */
-void FlightController::control_loop()
-{
-    Serial.print("Control loop starting.\n");
-    while (true)
-    {
-        read_imu();
-        read_receiver();
-        update_modes();
-        control();
-    }
-}
-
-/**
  * @brief Avvia il controller impostando lo stato a ARMED.
  */
 void FlightController::start()
@@ -230,7 +215,7 @@ void FlightController::update_modes()
 
 /**
  * @brief Calcola i dati di controllo basandosi sul tempo passato e sulle modalità correnti.
- * 
+ *
  * @param dt Intervallo di tempo dall'ultimo aggiornamento.
  */
 void FlightController::compute_data(double dt)
@@ -368,7 +353,7 @@ void FlightController::control()
         float pid_offset_quaternion[EULER_DIM] = {0, 0, 0};
         // Calcolo PID per i quaternioni
         float pid_output_quaternion[QUATERNION_DIM - 1];
-               for (int i = 1; i < QUATERNION_DIM; i++)
+        for (int i = 1; i < QUATERNION_DIM; i++)
         { // Ignora la componente scalare (q[0])
             if (calibration_target == i - 1)
             {

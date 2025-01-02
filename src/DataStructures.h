@@ -1,7 +1,7 @@
 /**
  * @file DataStructures.h
  * @brief Definizione di costanti, enumerazioni e strutture dati utilizzate nel progetto.
- * 
+ *
  * Questo file contiene dichiarazioni di costanti, enumerazioni e strutture dati
  * necessarie per la gestione dello stato del sistema e dei suoi componenti.
  */
@@ -102,11 +102,11 @@ enum class STATE
  */
 enum class CONTROLLER_MODE
 {
-  ERROR = -1,        ///< Modalità errore.
-  STANDARD = 0,      ///< Modalità standard.
-  KP_CALIBRATION,    ///< Calibrazione del guadagno proporzionale.
-  KI_CALIBRATION,    ///< Calibrazione del guadagno integrale.
-  KD_CALIBRATION     ///< Calibrazione del guadagno derivativo.
+  ERROR = -1,     ///< Modalità errore.
+  STANDARD = 0,   ///< Modalità standard.
+  KP_CALIBRATION, ///< Calibrazione del guadagno proporzionale.
+  KI_CALIBRATION, ///< Calibrazione del guadagno integrale.
+  KD_CALIBRATION  ///< Calibrazione del guadagno derivativo.
 };
 
 /**
@@ -135,41 +135,41 @@ enum class ASSIST_MODE
 /**
  * @struct FlightData
  * @brief Struttura per memorizzare i dati di volo.
- * 
+ *
  * Contiene informazioni su velocità, accelerazione, giroscopio, attitudine e posizione.
  */
 struct FlightData
 {
-  float velocity[EULER_DIM]; ///< Velocità lineare.
-  float acceleration[EULER_DIM]; ///< Accelerazione lineare.
-  float gyro[EULER_DIM]; ///< Velocità angolare.
+  float velocity[EULER_DIM];      ///< Velocità lineare.
+  float acceleration[EULER_DIM];  ///< Accelerazione lineare.
+  float gyro[EULER_DIM];          ///< Velocità angolare.
   float attitude[QUATERNION_DIM]; ///< Attitudine rappresentata come quaternione.
-  float position[EULER_DIM]; ///< Posizione nello spazio.
+  float position[EULER_DIM];      ///< Posizione nello spazio.
 };
 
 /**
  * @struct ControllerData
  * @brief Struttura per memorizzare i dati del controller.
- * 
+ *
  * Contiene input dell'utente, setpoint, errori PID e output per gli attuatori.
  */
 struct ControllerData
 {
-  float user_input[IA6B_CHANNELS]; ///< Input ricevuti dal pilota.
+  float user_input[IA6B_CHANNELS];         ///< Input ricevuti dal pilota.
   float setpoint_attitude[QUATERNION_DIM]; ///< Setpoint dell'attitudine.
 
-  float acceleration[EULER_DIM]; ///< Accelerazione lineare misurata.
-  float velocity[EULER_DIM]; ///< Velocità lineare misurata.
-  float gyro[EULER_DIM]; ///< Velocità angolare misurata.
+  float acceleration[EULER_DIM];  ///< Accelerazione lineare misurata.
+  float velocity[EULER_DIM];      ///< Velocità lineare misurata.
+  float gyro[EULER_DIM];          ///< Velocità angolare misurata.
   float attitude[QUATERNION_DIM]; ///< Attitudine misurata.
 
-  float error_gyro[EULER_DIM]; ///< Errori del giroscopio per il PID.
-  float error_attitude[QUATERNION_DIM]; ///< Errori dell'attitudine per il PID.
-  float pid_tuning_offset_gyro[EULER_DIM]; ///< Offset di tuning per il PID del giroscopio.
+  float error_gyro[EULER_DIM];                 ///< Errori del giroscopio per il PID.
+  float error_attitude[QUATERNION_DIM];        ///< Errori dell'attitudine per il PID.
+  float pid_tuning_offset_gyro[EULER_DIM];     ///< Offset di tuning per il PID del giroscopio.
   float pid_tuning_offset_attitude[EULER_DIM]; ///< Offset di tuning per il PID dell'attitudine.
 
   float servo_output[EULER_DIM]; ///< Output per i servomotori.
-  float esc_output; ///< Output per l'ESC.
+  float esc_output;              ///< Output per l'ESC.
 };
 
 #endif // DATA_STRUCTURES_H

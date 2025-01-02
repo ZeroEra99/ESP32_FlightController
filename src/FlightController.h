@@ -1,7 +1,7 @@
 /**
  * @file FlightController.h
  * @brief Dichiarazioni per la classe FlightController.
- * 
+ *
  * La classe gestisce il controllo di volo, tra cui input del pilota, stabilizzazione
  * tramite PID, lettura dei sensori e output verso attuatori.
  */
@@ -15,6 +15,7 @@
 #include "ESC.h"
 #include "PIDcontrol.h"
 #include "FlightControllerConfig.h"
+#include "DebugLogger.h"
 
 /**
  * @class FlightController
@@ -61,7 +62,7 @@ private:
 
     /**
      * @brief Elabora i dati per il controllo PID.
-     * 
+     *
      * @param dt Intervallo di tempo dall'ultimo aggiornamento.
      */
     void compute_data(double dt);
@@ -77,10 +78,10 @@ private:
     void output();
 
     // Componenti fisiche
-    ESC esc;                  ///< Controlla il motore tramite segnali PWM.
-    Motor servos[3];          ///< Array di servomotori per pitch, roll e yaw.
-    Receiver receiver;        ///< Ricevitore per i comandi del pilota.
-    BNO055 imu;               ///< Sensore IMU per orientamento e velocità.
+    ESC esc;           ///< Controlla il motore tramite segnali PWM.
+    Motor servos[3];   ///< Array di servomotori per pitch, roll e yaw.
+    Receiver receiver; ///< Ricevitore per i comandi del pilota.
+    BNO055 imu;        ///< Sensore IMU per orientamento e velocità.
 
     // Componenti logiche
     PIDcontrol pid_attitude[3]{
@@ -91,24 +92,19 @@ private:
         PIDcontrol(KP_GYRO_ROLL, KD_GYRO_ROLL, KI_GYRO_ROLL, MAX_INTEGRAL_GYRO),
         PIDcontrol(KP_GYRO_PITCH, KD_GYRO_PITCH, KI_GYRO_PITCH, MAX_INTEGRAL_GYRO),
         PIDcontrol(KP_GYRO_YAW, KD_GYRO_YAW, KI_GYRO_YAW, MAX_INTEGRAL_GYRO)}; ///< PID per il controllo delle velocità angolari.
-    ControllerData data;      ///< Struttura dati per memorizzare lo stato del controller.
+    ControllerData data;                                                       ///< Struttura dati per memorizzare lo stato del controller.
 
     // Stati del controllore
-    STATE state;              ///< Stato attuale del controller.
-    ASSIST_MODE assist_mode;  ///< Modalità di assistenza corrente.
+    STATE state;                     ///< Stato attuale del controller.
+    ASSIST_MODE assist_mode;         ///< Modalità di assistenza corrente.
     CONTROLLER_MODE controller_mode; ///< Modalità di controllo corrente.
-    Axis calibration_target;  ///< Asse target per la calibrazione PID.
+    Axis calibration_target;         ///< Asse target per la calibrazione PID.
 
 public:
     /**
      * @brief Costruttore della classe FlightController.
      */
     FlightController();
-
-    /**
-     * @brief Esegue il ciclo principale di controllo del volo.
-     */
-    void control_loop();
 };
 
 #endif // FLIGHT_CONTROLLER_H
