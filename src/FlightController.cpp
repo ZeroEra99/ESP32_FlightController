@@ -6,7 +6,8 @@ int receiver_pins[IA6B_CHANNELS] = {};
 FlightController::FlightController() : esc(ESC(ESC_PIN, PWM_MIN, PWM_MAX)), servos{Motor(SERVO_PIN_PITCH, SERVO_MIN, SERVO_MAX), Motor(SERVO_PIN_ROLL, SERVO_MIN, SERVO_MAX), Motor(SERVO_PIN_YAW, SERVO_MIN, SERVO_MAX)}, receiver(Receiver(receiver_pins)), imu(BNO055())
 {
     state = STATE::DISARMED;
-    mode = MODE::MANUAL;
+    assist_mode = ASSIST_MODE::MANUAL;
+    controller_mode = CONTROLLER_MODE::STANDARD;
     data = ControllerData();
 }
 
@@ -21,6 +22,7 @@ void FlightController::control_loop()
     {
         read_imu();
         read_receiver();
+        update_modes();
         control();
     }
 }
@@ -50,7 +52,7 @@ void FlightController::read_receiver()
 {
     {
         // Leggi i dati dal ricevitore
-        int pilot_data[IA6B_CHANNELS];                           // Array locale, gestito automaticamente
+        float pilot_data[IA6B_CHANNELS];                         // Array locale, gestito automaticamente
         memcpy(pilot_data, receiver.read(), sizeof(pilot_data)); // Copia sicura dai dati del ricevitore
         for (int i = 0; i < IA6B_CHANNELS; i++)
         {
@@ -86,10 +88,10 @@ void FlightController::read_receiver()
         pilot_data[THROTTLE] = pwm_to_digital(pilot_data[THROTTLE], PWM_MIN, PWM_MAX, THROTTLE_MIN, THROTTLE_MAX);
         pilot_data[YAW] = pwm_to_digital(pilot_data[YAW], PWM_MIN, PWM_MAX, -YAW_MAX, YAW_MAX);
         // Mappa i valori analogici interruttori in valori digitali
-        pilot_data[SWA] = pwm_to_digital(pilot_data[SWA], PWM_MIN, PWM_MAX, SWITCH_MIN, SWITCH_SW_ABC_MAX);
-        pilot_data[SWB] = pwm_to_digital(pilot_data[SWB], PWM_MIN, PWM_MAX, SWITCH_MIN, SWITCH_SW_ABC_MAX);
-        pilot_data[SWC] = pwm_to_digital(pilot_data[SWC], PWM_MIN, PWM_MAX, SWITCH_MIN, SWITCH_SW_ABC_MAX);
-        pilot_data[SWD] = pwm_to_digital(pilot_data[SWD], PWM_MIN, PWM_MAX, SWITCH_MIN, SWITCH_SW_D_MAX);
+        pilot_data[SWA] = map(pilot_data[SWA], PWM_MIN, PWM_MAX, SWITCH_MIN, SWITCH_SW_ABC_MAX);
+        pilot_data[SWB] = map(pilot_data[SWB], PWM_MIN, PWM_MAX, SWITCH_MIN, SWITCH_SW_ABC_MAX);
+        pilot_data[SWC] = map(pilot_data[SWC], PWM_MIN, PWM_MAX, SWITCH_MIN, SWITCH_SW_ABC_MAX);
+        pilot_data[SWD] = map(pilot_data[SWD], PWM_MIN, PWM_MAX, SWITCH_MIN, SWITCH_SW_D_MAX);
         // Mappa i valori analogici potenziometri in valori digitali
         pilot_data[VRA] = pwm_to_digital(pilot_data[VRA], PWM_MIN, PWM_MAX, VRA_MIN, VRA_MAX);
         pilot_data[VRB] = pwm_to_digital(pilot_data[VRB], PWM_MIN, PWM_MAX, VRB_MIN, VRB_MAX);
@@ -112,11 +114,49 @@ void FlightController::read_imu()
         data.attitude[i] = imu_data.attitude[i];
 }
 
+void FlightController::update_modes()
+{
+    // Modalità di assistenza (ASSIST_MODE)
+    if (data.user_input[SWA] == 0 && assist_mode != ASSIST_MODE::MANUAL)
+    {
+        assist_mode = ASSIST_MODE::MANUAL;
+    }
+    else if (data.user_input[SWA] == 1 && data.user_input[SWB] == 0 && assist_mode != ASSIST_MODE::GYRO_STABILIZED)
+    {
+        assist_mode = ASSIST_MODE::GYRO_STABILIZED;
+    }
+    else if (data.user_input[SWA] == 1 && data.user_input[SWB] == 1 && assist_mode != ASSIST_MODE::ATTITUDE_CONTROL)
+    {
+        assist_mode = ASSIST_MODE::ATTITUDE_CONTROL;
+    }
+
+    // Modalità del controller (CONTROLLER_MODE)
+    if (data.user_input[SWD] == 0 && controller_mode != CONTROLLER_MODE::STANDARD)
+    {
+        controller_mode = CONTROLLER_MODE::STANDARD;
+    }
+    else if (data.user_input[SWD] == 1)
+    {
+        if (data.user_input[SWC] == 0 && controller_mode != CONTROLLER_MODE::KP_CALIBRATION)
+        {
+            controller_mode = CONTROLLER_MODE::KP_CALIBRATION;
+        }
+        else if (data.user_input[SWC] == 1 && controller_mode != CONTROLLER_MODE::KI_CALIBRATION)
+        {
+            controller_mode = CONTROLLER_MODE::KI_CALIBRATION;
+        }
+        else if (data.user_input[SWC] == 2 && controller_mode != CONTROLLER_MODE::KD_CALIBRATION)
+        {
+            controller_mode = CONTROLLER_MODE::KD_CALIBRATION;
+        }
+    }
+}
+
 void FlightController::compute_data(double dt)
 {
 
     // Calcolo dell'errore di velocità angolare solo in modalità GYRO_STABILIZED
-    if (mode == MODE::GYRO_STABILIZED)
+    if (assist_mode == ASSIST_MODE::GYRO_STABILIZED)
     {
         for (int i = 0; i < EULER_DIM; i++)
         {
@@ -125,7 +165,7 @@ void FlightController::compute_data(double dt)
     }
 
     // Modalità GUIDED: Modifica del setpoint quaternioni e calcolo dell'errore
-    if (mode == MODE::ATTITUDE_CONTROL)
+    if (assist_mode == ASSIST_MODE::ATTITUDE_CONTROL)
     {
 
         for (int i = 0; i < 3; i++) // Itera su ROLL, PITCH, YAW
@@ -166,12 +206,12 @@ void FlightController::control()
 
     compute_data(dt);
 
-    if (mode == MODE::MANUAL)
+    if (assist_mode == ASSIST_MODE::MANUAL)
     {
         // Nessun calcolo in modalità manuale
         return;
     }
-    else if (mode == MODE::GYRO_STABILIZED)
+    else if (assist_mode == ASSIST_MODE::GYRO_STABILIZED)
     {
         // PID velocità angolare già implementato
         for (int i = 0; i < EULER_DIM; i++)
@@ -180,7 +220,7 @@ void FlightController::control()
             data.pid_output[i] = pid_output;
         }
     }
-    else if (mode == MODE::ATTITUDE_CONTROL)
+    else if (assist_mode == ASSIST_MODE::ATTITUDE_CONTROL)
     {
         // Calcolo PID per i quaternioni
         float pid_output_quaternion[QUATERNION_DIM - 1];

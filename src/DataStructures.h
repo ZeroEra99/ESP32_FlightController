@@ -63,12 +63,19 @@ enum class STATE
   ARMED = 1
 };
 
-enum class MODE
+enum class CONTROLLER_MODE
+{
+  STANDARD = 0,
+  KP_CALIBRATION,
+  KI_CALIBRATION,
+  KD_CALIBRATION
+};
+
+enum class ASSIST_MODE
 {
   MANUAL = 0,
   GYRO_STABILIZED = 1,
   ATTITUDE_CONTROL = 2,
-  AUTO = 3
 };
 
 /* ========================

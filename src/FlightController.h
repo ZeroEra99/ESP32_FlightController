@@ -16,6 +16,7 @@ private:
     void fail_safe();
     void read_imu();
     void read_receiver();
+    void update_modes();
     void compute_data(double dt);
 
     // Componenti fisiche
@@ -39,7 +40,8 @@ private:
 
     // Stati del controllore
     STATE state;
-    MODE mode;
+    ASSIST_MODE assist_mode;
+    CONTROLLER_MODE controller_mode;
 
 public:
     FlightController();
