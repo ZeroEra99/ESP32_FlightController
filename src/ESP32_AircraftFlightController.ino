@@ -1,5 +1,4 @@
 #include <Arduino.h>
-#include "Aircraft.h"
 #include "FlightController.h"
 
 void setup() {

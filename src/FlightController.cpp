@@ -3,8 +3,11 @@
 
 int receiver_pins[IA6B_CHANNELS] = {};
 
-FlightController::FlightController() : aircraft(), receiver(Receiver(receiver_pins))
+FlightController::FlightController() : esc(ESC(ESC_PIN, PWM_MIN, PWM_MAX)), servos{Motor(SERVO_PIN_PITCH, SERVO_MIN, SERVO_MAX), Motor(SERVO_PIN_ROLL, SERVO_MIN, SERVO_MAX), Motor(SERVO_PIN_YAW, SERVO_MIN, SERVO_MAX)}, receiver(Receiver(receiver_pins)), imu(BNO055())
 {
+    state = STATE::DISARMED;
+    mode = MODE::MANUAL;
+    data = ControllerData();
 }
 
 void FlightController::setup()
@@ -93,7 +96,7 @@ void FlightController::input()
     }
 
     // Leggi i dati dall'IMU
-    FlightData imu_data = aircraft.read_imu();
+    FlightData imu_data = read_imu();
     // Copia dei dati di velocità e accelerazione
     for (int i = 0; i < EULER_DIM; i++)
     {
@@ -200,6 +203,6 @@ void FlightController::output()
     int throttle_value = digital_to_pwm(data.user_input[THROTTLE], THROTTLE_MIN, THROTTLE_MAX, PWM_MIN, PWM_MAX);
     // Scrivi i valori sugli attuatori
     for (int i = 0; i < EULER_DIM; i++)
-        aircraft.servos[i].write(servo_values[i]);
-    aircraft.throttle.write(throttle_value);
+        servos[i].write(servo_values[i]);
+    esc.write(throttle_value);
 }
