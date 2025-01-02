@@ -44,6 +44,8 @@
 /* ========================
  *   PARAMETRI DI VOLO
  * ======================== */
-#define FORWARD_SPEED_THRESHOLD 0.1  // Soglia minima per considerare il drone in movimento veloce
+#define MOVE_SPEED_THRESHOLD 0.1  // Soglia minima per considerare il sistema in movimento
+#define MOVE_ACCEL_THRESHOLD 0.1  // Soglia minima per considerare il sistema in accelerazione
+#define FORWARD_SPEED_THRESHOLD 0.1  // Soglia minima per considerare il sistema in movimento veloce
 
 #endif // FLIGHT_CONTROLLER_CONFIG_H

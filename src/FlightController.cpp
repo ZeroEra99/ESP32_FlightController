@@ -19,7 +19,8 @@ void FlightController::control_loop()
     Serial.print("Control loop starting.\n");
     while (true)
     {
-        input();
+        read_imu();
+        read_receiver();
         control();
     }
 }
@@ -45,58 +46,60 @@ void FlightController::fail_safe()
     Serial.print("Failsafe mode entered.\n");
 }
 
-void FlightController::input()
+void FlightController::read_receiver()
 {
-    // Leggi i dati dal ricevitore
-    int pilot_data[IA6B_CHANNELS];                           // Array locale, gestito automaticamente
-    memcpy(pilot_data, receiver.read(), sizeof(pilot_data)); // Copia sicura dai dati del ricevitore
-    for (int i = 0; i < IA6B_CHANNELS; i++)
     {
-        if (pilot_data[i] == NAN)
-            fail_safe();
-    }
-    // Verifica i controlli per l'armamento
-    if (isInRange(pilot_data[THROTTLE], PWM_MIN, PWM_MIN + PWM_MAX * ARM_TOLERANCE * 0.01) &&
-        isInRange(pilot_data[PITCH], PWM_MIN, PWM_MIN + PWM_MAX * ARM_TOLERANCE * 0.01))
-    {
-        if (isInRange(pilot_data[YAW], PWM_MAX, PWM_MAX - PWM_MAX * ARM_TOLERANCE * 0.01) &&
-            isInRange(pilot_data[ROLL], PWM_MIN, PWM_MIN + PWM_MAX * ARM_TOLERANCE * 0.01))
-            stop();
-        else
+        // Leggi i dati dal ricevitore
+        int pilot_data[IA6B_CHANNELS];                           // Array locale, gestito automaticamente
+        memcpy(pilot_data, receiver.read(), sizeof(pilot_data)); // Copia sicura dai dati del ricevitore
+        for (int i = 0; i < IA6B_CHANNELS; i++)
         {
-            if (isInRange(pilot_data[YAW], PWM_MIN, PWM_MIN + PWM_MAX * ARM_TOLERANCE * 0.01) &&
-                isInRange(pilot_data[ROLL], PWM_MAX, PWM_MAX - PWM_MAX * ARM_TOLERANCE * 0.01))
-                start();
+            if (pilot_data[i] == NAN)
+                fail_safe();
         }
+        // Verifica i controlli per l'armamento
+        if (isInRange(pilot_data[THROTTLE], PWM_MIN, PWM_MIN + PWM_MAX * ARM_TOLERANCE * 0.01) &&
+            isInRange(pilot_data[PITCH], PWM_MIN, PWM_MIN + PWM_MAX * ARM_TOLERANCE * 0.01))
+        {
+            if (isInRange(pilot_data[YAW], PWM_MAX, PWM_MAX - PWM_MAX * ARM_TOLERANCE * 0.01) &&
+                isInRange(pilot_data[ROLL], PWM_MIN, PWM_MIN + PWM_MAX * ARM_TOLERANCE * 0.01) &&
+                state == STATE::ARMED)
+            {
+                for (int i = 0; i < EULER_DIM; i++)
+                {
+                    if (data.acceleration[i] > MOVE_ACCEL_THRESHOLD || data.velocity[i] > MOVE_SPEED_THRESHOLD)
+                        return;
+                }
+                stop();
+            }
+            else
+            {
+                if (isInRange(pilot_data[YAW], PWM_MIN, PWM_MIN + PWM_MAX * ARM_TOLERANCE * 0.01) &&
+                    isInRange(pilot_data[ROLL], PWM_MAX, PWM_MAX - PWM_MAX * ARM_TOLERANCE * 0.01) &&
+                    state == STATE::DISARMED)
+                    start();
+            }
+        }
+        // Mappa i valori analogici stick in valori digitali
+        pilot_data[ROLL] = pwm_to_digital(pilot_data[ROLL], PWM_MIN, PWM_MAX, -ROLL_MAX, ROLL_MAX); // Macro da definire
+        pilot_data[PITCH] = pwm_to_digital(pilot_data[PITCH], PWM_MIN, PWM_MAX, -PITCH_MAX, PITCH_MAX);
+        pilot_data[THROTTLE] = pwm_to_digital(pilot_data[THROTTLE], PWM_MIN, PWM_MAX, THROTTLE_MIN, THROTTLE_MAX);
+        pilot_data[YAW] = pwm_to_digital(pilot_data[YAW], PWM_MIN, PWM_MAX, -YAW_MAX, YAW_MAX);
+        // Mappa i valori analogici interruttori in valori digitali
+        pilot_data[SWA] = pwm_to_digital(pilot_data[SWA], PWM_MIN, PWM_MAX, SWITCH_MIN, SWITCH_SW_ABC_MAX);
+        pilot_data[SWB] = pwm_to_digital(pilot_data[SWB], PWM_MIN, PWM_MAX, SWITCH_MIN, SWITCH_SW_ABC_MAX);
+        pilot_data[SWC] = pwm_to_digital(pilot_data[SWC], PWM_MIN, PWM_MAX, SWITCH_MIN, SWITCH_SW_ABC_MAX);
+        pilot_data[SWD] = pwm_to_digital(pilot_data[SWD], PWM_MIN, PWM_MAX, SWITCH_MIN, SWITCH_SW_D_MAX);
+        // Mappa i valori analogici potenziometri in valori digitali
+        pilot_data[VRA] = pwm_to_digital(pilot_data[VRA], PWM_MIN, PWM_MAX, VRA_MIN, VRA_MAX);
+        pilot_data[VRB] = pwm_to_digital(pilot_data[VRB], PWM_MIN, PWM_MAX, VRB_MIN, VRB_MAX);
     }
-    // Mappa i valori analogici in valori digitali
-    pilot_data[ROLL] = pwm_to_digital(pilot_data[ROLL], PWM_MIN, PWM_MAX, -ROLL_MAX, ROLL_MAX); // Macro da definire
-    pilot_data[PITCH] = pwm_to_digital(pilot_data[PITCH], PWM_MIN, PWM_MAX, -PITCH_MAX, PITCH_MAX);
-    pilot_data[THROTTLE] = pwm_to_digital(pilot_data[THROTTLE], PWM_MIN, PWM_MAX, THROTTLE_MIN, THROTTLE_MAX);
-    pilot_data[YAW] = pwm_to_digital(pilot_data[YAW], PWM_MIN, PWM_MAX, -YAW_MAX, YAW_MAX);
-    pilot_data[AUX1] = map(pilot_data[AUX1], PWM_MIN, PWM_MAX, 0, 2);
-    pilot_data[AUX2] = pwm_to_digital(pilot_data[AUX2], PWM_MIN, PWM_MAX, 0, PID_MAX_OFFSET);
-    // Salva i dati dell'utente
-    for (int i = 0; i < EULER_DIM; i++)
-        data.user_input[i] = pilot_data[i];
-    switch (pilot_data[AUX1])
-    {
-    case 0:
-        // kp tune
-        data.pid_tuning_offset[KP] = pilot_data[AUX2];
-        break;
-    case 1:
-        // ki tune
-        data.pid_tuning_offset[KI] = pilot_data[AUX2] / 5;
-        break;
-    case 2:
-        // kd tune
-        data.pid_tuning_offset[KD] = pilot_data[AUX2] / 8;
-        break;
-    }
+}
 
+void FlightController::read_imu()
+{
     // Leggi i dati dall'IMU
-    FlightData imu_data = read_imu();
+    FlightData imu_data = imu.read();
     // Copia dei dati di velocità e accelerazione
     for (int i = 0; i < EULER_DIM; i++)
     {
@@ -104,7 +107,6 @@ void FlightController::input()
         data.acceleration[i] = imu_data.acceleration[i];
         data.gyro[i] = imu_data.gyro[i];
     }
-
     // Copia dei dati di attitudine
     for (int i = 0; i < QUATERNION_DIM; i++)
         data.attitude[i] = imu_data.attitude[i];

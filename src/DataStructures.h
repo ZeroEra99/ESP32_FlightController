@@ -27,8 +27,12 @@ enum PilotInput
   PITCH,
   THROTTLE,
   YAW,
-  AUX1,
-  AUX2
+  SWA,
+  SWB,
+  SWC,
+  SWD,
+  VRA,
+  VRB
 };
 
 enum PID

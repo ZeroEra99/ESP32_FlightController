@@ -14,7 +14,9 @@ private:
     void start();
     void stop();
     void fail_safe();
-    FlightData read_imu();
+    void read_imu();
+    void read_receiver();
+    void compute_data(double dt);
 
     // Componenti fisiche
     ESC esc;
@@ -43,9 +45,7 @@ public:
     FlightController();
     void setup();
     void control_loop();
-
-    void input();
-    void compute_data(double dt);
+    
     void control();
     void output();
 };
