@@ -8,7 +8,7 @@
 
 class Aircraft
 {
-private:
+public:
   BNO055 imu;
   Motor servos[3];
   ESC throttle;

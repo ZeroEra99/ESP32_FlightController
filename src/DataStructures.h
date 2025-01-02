@@ -39,11 +39,16 @@ struct FlightData
 
 struct ControllerData
 {
+  float user_data[IA6B_CHANNELS];
+  float setpoint_quaternion[QUATERNION_DIM];
+
   float acceleration[EULER_DIM];
   float velocity[EULER_DIM];
+  float angular_velocities[EULER_DIM];
+  float quaternion[QUATERNION_DIM];
+
   float error_angular_velocity[EULER_DIM];
-  float error_angle[EULER_DIM];
-  float error_quaternion[QUATERNION_DIM];
+  float error_angle[QUATERNION_DIM];
   float pid_tuning_offset[EULER_DIM];
   float pid_output[EULER_DIM];
 };
@@ -84,7 +89,8 @@ enum class STATE
 enum class MODE
 {
   MANUAL = 0,
-  GYRO_STABILIZED = 1
+  GYRO_STABILIZED = 1,  
+  GUIDED = 2
 };
 
 

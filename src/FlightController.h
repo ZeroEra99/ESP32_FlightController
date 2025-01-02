@@ -22,6 +22,7 @@ private:
 
     ControllerData data;
     STATE state;
+    MODE mode;
 
 public:
     FlightController();
@@ -32,8 +33,10 @@ public:
     void stop();
     void fail_safe();
 
-    void get_data();
+    void input();
+    void compute_data(double dt);
     void control();
+    void output();
 };
 
 #endif // FLIGHT_CONTROLLER_H

@@ -30,11 +30,11 @@
 #define BLINK_ON 500
 #define BLINK_OFF 500
 // Input utente
-#define THROTTLE_PILOT_MIN 0
-#define THROTTLE_PILOT_MAX 100
-#define ROLL_PILOT_MAX 45
-#define PITCH_PILOT_MAX 45
-#define YAW_PILOT_MAX 45
+#define THROTTLE_MIN 0
+#define THROTTLE_MAX 100
+#define ROLL_MAX 45
+#define PITCH_MAX 45
+#define YAW_MAX 45
 #define ARM_TOLERANCE 10
 
 // Definizione dei valori di default per il PID

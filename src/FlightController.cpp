@@ -16,6 +16,8 @@ void FlightController::control_loop()
     Serial.print("Control loop starting.\n");
     while (true)
     {
+        input();
+        control();
     }
 }
 
@@ -40,7 +42,7 @@ void FlightController::fail_safe()
     Serial.print("Failsafe mode entered.\n");
 }
 
-void FlightController::get_data()
+void FlightController::input()
 {
     // Leggi i dati dal ricevitore
     int pilot_data[IA6B_CHANNELS];                           // Array locale, gestito automaticamente
@@ -50,7 +52,6 @@ void FlightController::get_data()
         if (pilot_data[i] == NAN)
             fail_safe();
     }
-
     // Verifica i controlli per l'armamento
     if (isInRange(pilot_data[THROTTLE], PWM_MIN, PWM_MIN + PWM_MAX * ARM_TOLERANCE * 0.01) &&
         isInRange(pilot_data[PITCH], PWM_MIN, PWM_MIN + PWM_MAX * ARM_TOLERANCE * 0.01))
@@ -65,16 +66,16 @@ void FlightController::get_data()
                 start();
         }
     }
-
     // Mappa i valori analogici in valori digitali
-    pilot_data[ROLL] = pwm_to_digital(pilot_data[ROLL], PWM_MIN, PWM_MAX, -ROLL_PILOT_MAX, ROLL_PILOT_MAX); // Macro da definire
-    pilot_data[PITCH] = pwm_to_digital(pilot_data[PITCH], PWM_MIN, PWM_MAX, -PITCH_PILOT_MAX, PITCH_PILOT_MAX);
-    pilot_data[THROTTLE] = pwm_to_digital(pilot_data[THROTTLE], PWM_MIN, PWM_MAX, THROTTLE_PILOT_MIN, THROTTLE_PILOT_MAX);
-    pilot_data[YAW] = pwm_to_digital(pilot_data[YAW], PWM_MIN, PWM_MAX, -YAW_PILOT_MAX, YAW_PILOT_MAX);
+    pilot_data[ROLL] = pwm_to_digital(pilot_data[ROLL], PWM_MIN, PWM_MAX, -ROLL_MAX, ROLL_MAX); // Macro da definire
+    pilot_data[PITCH] = pwm_to_digital(pilot_data[PITCH], PWM_MIN, PWM_MAX, -PITCH_MAX, PITCH_MAX);
+    pilot_data[THROTTLE] = pwm_to_digital(pilot_data[THROTTLE], PWM_MIN, PWM_MAX, THROTTLE_MIN, THROTTLE_MAX);
+    pilot_data[YAW] = pwm_to_digital(pilot_data[YAW], PWM_MIN, PWM_MAX, -YAW_MAX, YAW_MAX);
     pilot_data[AUX1] = map(pilot_data[AUX1], PWM_MIN, PWM_MAX, 0, 2);
     pilot_data[AUX2] = pwm_to_digital(pilot_data[AUX2], PWM_MIN, PWM_MAX, 0, PID_TUNING_MAX_VALUE);
-
-    // Applica gli offset di tuning
+    // Salva i dati dell'utente
+    for (int i = 0; i < EULER_DIM; i++)
+        data.user_data[i] = pilot_data[i];
     switch (pilot_data[AUX1])
     {
     case 0:
@@ -100,39 +101,110 @@ void FlightController::get_data()
     data.acceleration[X] = imu_data.acceleration[X];
     data.acceleration[Y] = imu_data.acceleration[Y];
     data.acceleration[Z] = imu_data.acceleration[Z];
-    // Calcola l'errore velocità angolare
-    float error_angular_velocity[3] = {
-        pilot_data[ROLL] - imu_data.angular_velocities[X],
-        pilot_data[PITCH] - imu_data.angular_velocities[Y],
-        pilot_data[YAW] - imu_data.angular_velocities[Z]};
-    // Calcola l'errore input utente angoli sui tre assi - LATER
-    // Calcola l'errore input utente quaternion - LATER
+    data.angular_velocities[X] = imu_data.angular_velocities[X];
+    data.angular_velocities[Y] = imu_data.angular_velocities[Y];
+    data.angular_velocities[Z] = imu_data.angular_velocities[Z];
+    data.quaternion[W] = imu_data.quaternion[W];
+    data.quaternion[X] = imu_data.quaternion[X];
+    data.quaternion[Y] = imu_data.quaternion[Y];
+    data.quaternion[Z] = imu_data.quaternion[Z];
+}
+
+void FlightController::compute_data(double dt)
+{
+
+    // Calcolo dell'errore di velocità angolare solo in modalità GYRO_STABILIZED
+    if (mode == MODE::GYRO_STABILIZED)
+    {
+        for (int i = 0; i < EULER_DIM; i++)
+        {
+            data.error_angular_velocity[i] = data.user_data[i] - data.angular_velocities[i];
+        }
+    }
+
+    // Modalità GUIDED: Modifica del setpoint quaternioni e calcolo dell'errore
+    if (mode == MODE::GUIDED)
+    {
+
+        for (int i = 0; i < 3; i++) // Itera su ROLL, PITCH, YAW
+        {
+            if (data.user_data[i] != 0)
+            {
+                float q_rotation[4], q_temp[4];
+
+                // Crea il quaternione per la rotazione
+                quaternion_from_axis_angle(axis[i], data.user_data[i] * dt, q_rotation);
+
+                // Moltiplica il setpoint quaternione con il quaternione di rotazione
+                quaternion_multiply(q_rotation, data.setpoint_quaternion, q_temp);
+
+                // Aggiorna il setpoint quaternione
+                memcpy(data.setpoint_quaternion, q_temp, sizeof(q_temp));
+            }
+        }
+        quaternion_normalize(data.setpoint_quaternion); // Normalizza il setpoint
+
+        // Calcolo della differenza tra setpoint e IMU quaternione
+        float q_conjugate[QUATERNION_DIM];
+        float q_error[QUATERNION_DIM];
+        quaternion_conjugate(data.quaternion, q_conjugate);                  // Coniugato del quaternione IMU
+        quaternion_multiply(data.setpoint_quaternion, q_conjugate, q_error); // Differenza tra quaternioni
+        for (int i = 0; i < QUATERNION_DIM; i++)
+            data.error_angle[i] = q_error[i];
+        return;
+    }
 }
 
 void FlightController::control()
 {
-    static unsigned long tPrev = 0;   // Tempo dell'ultimo ciclo
-    unsigned long t = millis();       // Ottieni il tempo corrente
-    double dt = (t - tPrev) / 1000.0; // Calcola il tempo trascorso in secondi
-    tPrev = t;                        // Aggiorna il tempo dell'ultimo ciclo
+    static unsigned long tPrev = 0;
+    unsigned long t = millis();
+    double dt = (t - tPrev) / 1000.0;
+    tPrev = t;
 
-    // Calcola i PID
-    float pid_offset_gyro[EULER_DIM];
-    for (int i = 0; i < EULER_DIM; i++)
+    compute_data(dt);
+
+    if (mode == MODE::MANUAL)
     {
-        pid_offset_gyro[i] = pid_angular_velocity[i].pid(data.error_angular_velocity[i], dt);
-        // inversamente proporzionale alla velocità lineare
-        // Riduzione inversamente proporzionale alla velocità
-        float forward_speed = data.velocity[X]; // Supponendo che l'asse X sia la direzione in avanti
-        float reduction_factor = 1.0;
-
-        if (forward_speed > 0)
-            reduction_factor = 1.0 - 0.5 * std::min(forward_speed / FORWARD_SPEED_THRESHOLD, 1.0);
-
-        // Calcolo PID con riduzione
-        pid_offset_gyro[i] = pid_angular_velocity[i].pid(data.error_angular_velocity[i], dt) * reduction_factor;
-        data.pid_output[i] = pid_offset_gyro[i];
+        // Nessun calcolo in modalità manuale
+        return;
     }
-    // Calcola i PID per gli angoli - LATER
-    // Calcola i PID per i quaternion - LATER
+    else if (mode == MODE::GYRO_STABILIZED)
+    {
+        // PID velocità angolare già implementato
+        for (int i = 0; i < EULER_DIM; i++)
+        {
+            float pid_output = pid_angular_velocity[i].pid(data.error_angular_velocity[i], dt);
+            data.pid_output[i] = pid_output;
+        }
+    }
+    else if (mode == MODE::GUIDED)
+    {
+        // Calcolo PID per i quaternioni
+        float pid_output_quaternion[QUATERNION_DIM - 1];
+        for (int i = 1; i < QUATERNION_DIM; i++) // Ignora la componente scalare (q[0])
+            pid_output_quaternion[i - 1] = pid_angle[i - 1].pid(data.error_angle[i], dt);
+
+        // Passa l'output del PID quaternione come input al PID velocità angolare
+        for (int i = 0; i < EULER_DIM; i++)
+        {
+            float angular_setpoint = pid_output_quaternion[i];
+            float pid_output = pid_angular_velocity[i].pid(angular_setpoint - data.angular_velocities[i], dt);
+            data.pid_output[i] = pid_output;
+        }
+    }
 }
+
+void FlightController::output()
+{
+    // Mappa i valori digitali in valori PWM
+    int servo_values[EULER_DIM];
+    servo_values[X] = digital_to_pwm(data.user_data[ROLL], -ROLL_MAX, ROLL_MAX, SERVO_MIN, SERVO_MAX);
+    int throttle_value = digital_to_pwm(data.user_data[THROTTLE], THROTTLE_MIN, THROTTLE_MAX, PWM_MIN, PWM_MAX);
+    // Scrivi i valori sugli attuatori
+    for (int i = 0; i < EULER_DIM; i++)
+        aircraft.servos[i].write(servo_values[i]);
+    aircraft.throttle.write(throttle_value);
+}
+
+

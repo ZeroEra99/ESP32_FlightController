@@ -24,7 +24,6 @@ void BNO055::setup() {
 
 FlightData BNO055::read() {
   // Leggi i dati dalla IMU
-  imu::Vector<3> euler = bno055.getVector(Adafruit_BNO055::VECTOR_EULER);
   imu::Vector<3> angular_velocities = bno055.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);
   imu::Quaternion quaternion = bno055.getQuat();
   sensors_event_t linearAccelData;
@@ -33,10 +32,6 @@ FlightData BNO055::read() {
   // Creazione della struttura FlightData
   static double xVel = 0, yVel = 0, zVel = 0; // Velocità integrate
   FlightData data;
-
-  data.angles[X] = euler.x();
-  data.angles[Y] = euler.y();
-  data.angles[Z] = euler.z();
 
   data.angular_velocities[X] = angular_velocities.x();
   data.angular_velocities[Y] = angular_velocities.y();
