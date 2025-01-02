@@ -18,7 +18,7 @@
 #define VRA_MIN 0
 #define VRA_MAX 100
 #define VRB_MIN 0
-#define VRB_MAX 100
+#define VRB_MAX 2
 // Parametri input utente
 #define THROTTLE_MIN 0
 #define THROTTLE_MAX 100
