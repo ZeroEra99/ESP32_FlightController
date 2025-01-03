@@ -3,7 +3,7 @@
  * @brief Dichiarazioni per la classe base Actuator.
  *
  * La classe Actuator rappresenta un'interfaccia astratta per componenti fisici
- * controllabili, come motori o LED.
+ * controllabili come esc, servomotori o LED.
  */
 
 #ifndef ACTUATOR_H

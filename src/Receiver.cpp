@@ -9,72 +9,67 @@
 #include "Receiver.h"
 
 /**
- * @brief Oggetto PWM per ciascun canale del ricevitore.
- *
- * Ogni membro rappresenta un canale PWM associato al ricevitore RC.
- */
-PWMs pwm;
-
-/**
  * @brief Costruttore della classe Receiver.
  *
- * Inizializza il ricevitore RC associando ciascun canale a un pin hardware
- * e configurando i corrispondenti oggetti PWM.
+ * Inizializza il ricevitore iBus collegandosi a una porta seriale.
  *
- * @param receiver_pins Struttura contenente i pin associati ai canali del ricevitore.
+ * @param serial Porta seriale associata al ricevitore RC.
  */
-Receiver::Receiver(ReceiverPins receiver_pins)
+Receiver::Receiver(HardwareSerial &serial) : serialPort(serial)
 {
-    // Associazione dei pin ai membri della struttura ReceiverPins
-    this->receiver_pins = receiver_pins;
-
-    // Inizializzazione dei dati a zero
-    data = {};
-
-    // Associazione dei pin agli oggetti PWM e avvio del monitoraggio
-    pwm.pwm_pitch.attach(receiver_pins.x);
-    pwm.pwm_roll.attach(receiver_pins.y);
-    pwm.pwm_throttle.attach(receiver_pins.throttle);
-    pwm.pwm_yaw.attach(receiver_pins.z);
-    pwm.pwm_swa.attach(receiver_pins.swa);
-    pwm.pwm_swb.attach(receiver_pins.swb);
-    pwm.pwm_swc.attach(receiver_pins.swc);
-    pwm.pwm_swd.attach(receiver_pins.swd);
-    pwm.pwm_vra.attach(receiver_pins.vra);
-    pwm.pwm_vrb.attach(receiver_pins.vrb);
-
-    pwm.pwm_pitch.begin(1);
-    pwm.pwm_roll.begin(1);
-    pwm.pwm_throttle.begin(1);
-    pwm.pwm_yaw.begin(1);
-    pwm.pwm_swa.begin(1);
-    pwm.pwm_swb.begin(1);
-    pwm.pwm_swc.begin(1);
-    pwm.pwm_swd.begin(1);
-    pwm.pwm_vra.begin(1);
-    pwm.pwm_vrb.begin(1);
+    serialPort.begin(115200); // Velocità di trasmissione iBus
+    data = {0};               // Inizializza i dati del pilota
 }
 
 /**
- * @brief Legge i dati dai canali del ricevitore.
+ * @brief Decodifica un pacchetto iBus.
  *
- * Recupera i valori PWM da ciascun canale e li converte in una struttura `PilotData`
- * per l'elaborazione successiva.
- *
- * @return Struttura `PilotData` contenente i dati letti dai canali RC.
+ * @param buffer Array contenente il pacchetto ricevuto.
+ * @return true se il pacchetto è valido, false altrimenti.
  */
-PilotData Receiver::read()
+bool Receiver::decodeIBusPacket(const uint8_t *buffer)
 {
-    PilotData data;
-    data.x = pwm.pwm_roll.getValue();
-    data.y = pwm.pwm_pitch.getValue();
-    data.throttle = pwm.pwm_throttle.getValue();
-    data.z = pwm.pwm_yaw.getValue();
-    data.swa = pwm.pwm_swa.getValue();
-    data.swb = pwm.pwm_swb.getValue();
-    data.swc = pwm.pwm_swc.getValue();
-    data.swd = pwm.pwm_swd.getValue();
-    data.vra = pwm.pwm_vra.getValue();
-    data.vrb = pwm.pwm_vrb.getValue();
-    return data;
+    // Verifica l'header del pacchetto
+    if (buffer[0] != 0x20)
+        return false;
+
+    // Calcolo del checksum
+    uint16_t checksum = 0xFFFF;
+    for (int i = 0; i < 30; i++) // 30 byte di dati
+    {
+        checksum -= buffer[i];
+    }
+
+    // Confronta il checksum
+    uint16_t receivedChecksum = (buffer[30] | (buffer[31] << 8));
+    if (checksum != receivedChecksum)
+        return false;
+
+    // Aggiorna i dati del pilota
+    for (int i = 0; i < 10; i++) // I primi 10 canali
+    {
+        ((int16_t *)&data)[i] = buffer[2 + i * 2] | (buffer[3 + i * 2] << 8);
+    }
+
+    return true;
+}
+
+/**
+ * @brief Legge i dati dal ricevitore RC.
+ *
+ * @return Struttura `PilotData` contenente i dati del pilota.
+ */
+PilotDataAnalog Receiver::read()
+{
+    static uint8_t buffer[32]; // Buffer per un pacchetto iBus
+    if (serialPort.available() >= 32)
+    {
+        serialPort.readBytes(buffer, 32); // Legge 32 byte
+        if (decodeIBusPacket(buffer))
+        {
+            return data; // Ritorna i dati validi
+        }
+    }
+
+    return data; // Ritorna i dati precedenti se non valido
 }

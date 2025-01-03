@@ -2,150 +2,93 @@
  * @file FlightController.h
  * @brief Dichiarazioni per la classe FlightController.
  *
- * La classe gestisce il controllo di volo, tra cui input del pilota, stabilizzazione
- * tramite PID, lettura dei sensori e output verso attuatori.
+ * La classe FlightController gestisce il controllo di volo, tra cui:
+ * - Elaborazione degli input del pilota.
+ * - Stabilizzazione del velivolo tramite algoritmi PID.
+ * - Lettura dei dati dai sensori.
+ * - Calcolo e invio degli output verso gli attuatori.
  */
 
 #ifndef FLIGHT_CONTROLLER_H
 #define FLIGHT_CONTROLLER_H
 
-#include "Receiver.h"
-#include "bno055.h"
-#include "Motor.h"
-#include "ESC.h"
 #include "PIDcontrol.h"
+#include "DataStructures.h"
 #include "FlightControllerConfig.h"
-#include "DebugLogger.h"
 
 /**
  * @class FlightController
  * @brief Classe che gestisce il controllo di volo.
  *
- * Questa classe si occupa di:
- * - Ricevere input dagli utenti tramite il ricevitore RC.
- * - Leggere i dati dai sensori (IMU).
- * - Applicare algoritmi di controllo PID.
- * - Inviare comandi agli attuatori per stabilizzare e pilotare il sistema.
+ * Questa classe implementa i seguenti compiti principali:
+ * - Stabilizzazione del velivolo tramite PID su rollio, beccheggio e imbardata.
+ * - Controllo delle velocità angolari tramite PID.
+ * - Calcolo degli errori di attitudine e velocità.
+ * - Tuning dinamico dei parametri PID.
  */
 class FlightController
 {
 private:
     /**
-     * @brief Avvia il controller impostando lo stato a ARMED.
+     * @brief Calcola i dati di controllo in base alle modalità operative e all'input.
      *
-     * Prepara il sistema per il volo attivando i componenti necessari.
+     * Questo metodo elabora i dati di volo attuali, gli input del pilota e lo stato
+     * del sistema per determinare gli errori e i valori di controllo da utilizzare
+     * nei PID.
+     *
+     * @param dt Intervallo di tempo dall'ultimo aggiornamento (in secondi).
+     * @param pilot_data Input del pilota ricevuti dal sistema.
+     * @param flight_data Dati di volo attuali, inclusi velocità e orientamento.
+     * @param digital_output Output digitali calcolati per gli attuatori.
+     * @param assist_mode Modalità di assistenza attuale (manuale, stabilizzato, ecc.).
+     * @param state Stato attuale del sistema.
+     * @param error Tipo di errore rilevato (se presente).
+     * @param controller_mode Modalità operativa del controller (standard, tuning, ecc.).
      */
-    void start();
-
-    /**
-     * @brief Ferma il controller impostando lo stato a DISARMED.
-     *
-     * Disattiva i componenti attivi per garantire la sicurezza.
-     */
-    void stop();
-
-    /**
-     * @brief Attiva la modalità failsafe in caso di errore critico.
-     *
-     * Imposta il controller in una modalità di emergenza per minimizzare i rischi.
-     */
-    void fail_safe();
-
-    /**
-     * @brief Gestisce errori critici impostando il controller per l'atterraggio automatico.
-     *
-     * Modifica lo stato e le modalità operative per eseguire un atterraggio sicuro.
-     */
-    void critical_error();
-
-    /**
-     * @brief Legge i dati dall'IMU e aggiorna lo stato interno.
-     *
-     * Acquisisce informazioni di orientamento, velocità angolare e accelerazione dal sensore IMU.
-     */
-    void read_imu();
-
-    /**
-     * @brief Legge i dati dal ricevitore e aggiorna i comandi del pilota.
-     *
-     * Converte i segnali PWM in input digitali per l'elaborazione successiva.
-     */
-    void read_receiver();
-
-    /**
-     * @brief Aggiorna le modalità operative del controller.
-     *
-     * Determina le modalità di assistenza e controllo attive in base agli input del pilota.
-     */
-    void update_modes();
-
-    /**
-     * @brief Elabora i dati per il controllo PID.
-     *
-     * Calcola i valori di errore e prepara i dati per il controllo PID.
-     *
-     * @param dt Intervallo di tempo dall'ultimo aggiornamento.
-     */
-    void compute_data(double dt);
-
-    /**
-     * @brief Esegue il controllo utilizzando i valori PID calcolati.
-     *
-     * Applica gli algoritmi PID per generare i comandi di controllo.
-     */
-    void control();
-
-    /**
-     * @brief Invia i valori calcolati agli attuatori.
-     *
-     * Converte i valori digitali in segnali PWM e li invia ai motori e servomotori.
-     */
-    void output();
-
-    // Componenti fisiche
-    ESC esc;           ///< Controlla il motore tramite segnali PWM.
-    Motor servo_x;     ///< Servomotore per il rollio.
-    Motor servo_y;     ///< Servomotore per il beccheggio.
-    Motor servo_z;     ///< Servomotore per lo yaw.
-    Receiver receiver; ///< Ricevitore per i comandi del pilota.
-    BNO055 imu;        ///< Sensore IMU per orientamento e velocità.
-    ReceiverPins receiver_pins = {
-        IA6B_PIN_CHANNEL_1, IA6B_PIN_CHANNEL_2, IA6B_PIN_CHANNEL_3,
-        IA6B_PIN_CHANNEL_4, IA6B_PIN_CHANNEL_5, IA6B_PIN_CHANNEL_6,
-        IA6B_PIN_CHANNEL_7, IA6B_PIN_CHANNEL_8, IA6B_PIN_CHANNEL_9, IA6B_PIN_CHANNEL_10}; ///< Pin del ricevitore.
+    void compute_data(double dt, PilotData &pilot_data, FlightData &flight_data, DigitalOutput &digital_output, ASSIST_MODE assist_mode, STATE state, ERROR_TYPE error, CONTROLLER_MODE controller_mode);
 
     // Componenti logiche
-    PIDcontrol pid_attitude_x; ///< PID per il controllo dell'assetto sull'asse X.
-    PIDcontrol pid_attitude_y; ///< PID per il controllo dell'assetto sull'asse Y.
-    PIDcontrol pid_attitude_z; ///< PID per il controllo dell'assetto sull'asse Z.
-    PIDcontrol pid_gyro_x;     ///< PID per il controllo del giroscopio sull'asse X.
-    PIDcontrol pid_gyro_y;     ///< PID per il controllo del giroscopio sull'asse Y.
-    PIDcontrol pid_gyro_z;     ///< PID per il controllo del giroscopio sull'asse Z.
+    PIDcontrol pid_attitude_x; ///< PID per il controllo dell'assetto sull'asse X (rollio).
+    PIDcontrol pid_attitude_y; ///< PID per il controllo dell'assetto sull'asse Y (beccheggio).
+    PIDcontrol pid_attitude_z; ///< PID per il controllo dell'assetto sull'asse Z (imbardata).
+    PIDcontrol pid_gyro_x;     ///< PID per il controllo della velocità angolare sull'asse X (rollio).
+    PIDcontrol pid_gyro_y;     ///< PID per il controllo della velocità angolare sull'asse Y (beccheggio).
+    PIDcontrol pid_gyro_z;     ///< PID per il controllo della velocità angolare sull'asse Z (imbardata).
 
-    // Stati del controllore
-    STATE state;                           ///< Stato attuale del controller.
-    ASSIST_MODE assist_mode;               ///< Modalità di assistenza corrente.
-    CONTROLLER_MODE controller_mode;       ///< Modalità di controllo corrente.
-    CALIBRATION_TARGET calibration_target; ///< Asse target per la calibrazione PID.
-
-    // Dati
-    FlightData flight_data; ///< Dati di volo, inclusi accelerazione, velocità e attitudine.
-    PilotData pilot_data;   ///< Dati del pilota, inclusi input da stick e interruttori.
-    Euler error_gyro;       ///< Errore del giroscopio per ogni asse.
-    Quaternion error_attitude; ///< Errore di attitudine rappresentato come quaternione.
-    Quaternion setpoint_attitude; ///< Attitudine desiderata rappresentata come quaternione.
-    PID pid_tuning_offset_gyro; ///< Offset per il tuning del PID del giroscopio.
-    PID pid_tuning_offset_attitude; ///< Offset per il tuning del PID dell'assetto.
-    AnalogOutput analog_output; ///< Uscite analogiche calcolate per gli attuatori.
-    DigitalOutput digital_output; ///< Uscite digitali calcolate per gli attuatori.
+    // Dati di errore e stato
+    Euler error_gyro;               ///< Errore delle velocità angolari per ciascun asse (X, Y, Z).
+    Quaternion error_attitude;      ///< Errore di attitudine calcolato come differenza tra setpoint e attitudine attuale.
+    Quaternion desired_attitude;    ///< Attitudine desiderata calcolata dagli input del pilota.
+    PID pid_tuning_offset_gyro;     ///< Offset dinamici per il tuning del PID delle velocità angolari.
+    PID pid_tuning_offset_attitude; ///< Offset dinamici per il tuning del PID degli assetti.
 
 public:
     /**
      * @brief Costruttore della classe FlightController.
      *
-     * Inizializza tutte le componenti fisiche e logiche necessarie per il controllo di volo.
+     * Inizializza le componenti PID e i parametri necessari per il controllo di volo.
+     *
+     * @param pilot_data Struttura contenente i dati di input del pilota.
+     * @param flight_data Struttura contenente i dati di volo attuali.
+     * @param digital_output Struttura per salvare gli output calcolati dal controller.
      */
-    FlightController();
+    FlightController(PilotData &pilot_data, FlightData &flight_data, DigitalOutput &digital_output);
+
+    /**
+     * @brief Esegue il controllo di volo.
+     *
+     * Utilizza i dati attuali per calcolare i segnali di controllo PID
+     * e aggiorna gli output digitali per gli attuatori.
+     *
+     * @param dt Intervallo di tempo dall'ultimo aggiornamento (in secondi).
+     * @param flight_data Dati di volo attuali, inclusi velocità e orientamento.
+     * @param pilot_data Input del pilota ricevuti dal sistema.
+     * @param digital_output Output digitali calcolati per gli attuatori.
+     * @param assist_mode Modalità di assistenza attuale (manuale, stabilizzato, ecc.).
+     * @param state Stato attuale del sistema.
+     * @param calibration_target Asse target per la calibrazione PID (X, Y, Z).
+     */
+    void control(double dt, FlightData &flight_data, PilotData &pilot_data, DigitalOutput &digital_output, ASSIST_MODE assist_mode, STATE state, CALIBRATION_TARGET calibration_target);
 };
 
 #endif // FLIGHT_CONTROLLER_H

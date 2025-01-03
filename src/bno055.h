@@ -27,20 +27,11 @@
 class BNO055
 {
 private:
-  /**
-   * @brief Configura il sensore BNO055.
-   *
-   * Metodo privato utilizzato per inizializzare e configurare il sensore.
-   * Deve essere invocato manualmente per abilitare il sensore prima dell'uso.
-   */
-  void setup();
-
 public:
   /**
    * @brief Costruttore della classe BNO055.
    *
-   * Inizializza l'oggetto associato al sensore. La configurazione del sensore
-   * deve essere completata chiamando il metodo `setup`.
+   * Inizializza l'oggetto associato al sensore e ne effettua la configurazione.
    */
   BNO055();
 

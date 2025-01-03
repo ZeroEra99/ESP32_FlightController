@@ -18,7 +18,7 @@
  * @param pin Il pin hardware a cui il LED è collegato.
  * @param color Il colore del LED.
  */
-Light::Light(int pin, Color color) : Actuator(pin) 
+Light::Light(int pin, Color color) : Actuator(pin)
 {
     Serial.print("Light ");
     Serial.print(pin);

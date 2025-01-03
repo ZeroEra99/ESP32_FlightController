@@ -21,8 +21,8 @@
  */
 PIDcontrol::PIDcontrol(double kp, double ki, double kd, double maxIntegral) : kp(kp), ki(ki), kd(kd), maxIntegral(maxIntegral)
 {
-    integral = 0;   ///< Inizializza il valore integrale accumulato.
-    lastError = 0;  ///< Inizializza l'ultimo errore registrato.
+    integral = 0;  ///< Inizializza il valore integrale accumulato.
+    lastError = 0; ///< Inizializza l'ultimo errore registrato.
 }
 
 /**

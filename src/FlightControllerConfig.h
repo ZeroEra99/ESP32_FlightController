@@ -2,7 +2,7 @@
  * @file FlightControllerConfig.h
  * @brief Configurazioni e parametri per il controllo di volo.
  *
- * Questo file contiene le definizioni dei parametri PID, dei limiti
+ * Questo file contiene le definizioni dei parametri PID, dei limiti,
  * e delle soglie utilizzati per il controllo del sistema di volo.
  */
 
@@ -160,24 +160,6 @@
  *   PARAMETRI DI VOLO
  * ======================== */
 /**
- * @def MOVE_SPEED_THRESHOLD
- * @brief Soglia minima per considerare il sistema in movimento (m/s).
- */
-#define MOVE_SPEED_THRESHOLD 0.1
-
-/**
- * @def MOVE_ACCEL_THRESHOLD
- * @brief Soglia minima per considerare il sistema in accelerazione (m/s²).
- */
-#define MOVE_ACCEL_THRESHOLD 0.1
-
-/**
- * @def FORWARD_SPEED_THRESHOLD
- * @brief Soglia minima per considerare il sistema in movimento veloce (m/s).
- */
-#define FORWARD_SPEED_THRESHOLD 0.1
-
-/**
  * @def AUTO_LAND_X
  * @brief Angolo di rollio (ROLL) per l'atterraggio automatico.
  */
@@ -194,5 +176,17 @@
  * @brief Valore di throttle per l'atterraggio automatico.
  */
 #define AUTO_LAND_THROTTLE 0
+
+/**
+ * @def AUTO_LAND_Z
+ * @brief Angolo di imbardata (YAW) per l'atterraggio automatico.
+ */
+#define AUTO_LAND_Z 0
+
+/**
+ * @def FORWARD_SPEED_THRESHOLD
+ * @brief Soglia di velocità in avanti per la riduzione del controllo.
+ */
+#define FORWARD_SPEED_THRESHOLD 1
 
 #endif // FLIGHT_CONTROLLER_CONFIG_H

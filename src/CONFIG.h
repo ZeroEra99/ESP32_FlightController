@@ -38,6 +38,12 @@
 #define SERVO_MAX 180
 
 /**
+ * @def SERVO_REDUCTION_FACTOR
+ * @brief Fattore di riduzione per i servomotori in base alla velocità.
+ */
+#define SERVO_REDUCTION_FACTOR 0.5
+
+/**
  * @def SWITCH_MIN
  * @brief Valore minimo per la mappatura degli interruttori.
  */
