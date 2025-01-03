@@ -1,49 +1,53 @@
+/**
+ * @file main.cpp
+ * @brief Programma principale per il controllo di volo.
+ *
+ * Questo file contiene il ciclo principale del programma e la configurazione iniziale.
+ * Include la configurazione dell'Access Point, l'avvio del server HTTP e l'integrazione con
+ * il logger per il monitoraggio e la diagnostica.
+ */
+
 #include <Arduino.h>
 #include "FlightController.h"
+
 #include "WiFiManager.h"
 #include "DebugLogger.h"
 
-/*
-  Esempi di stampa e logging per il futuro
-*/
-
-// Credenziali Wi-Fi
-const char *ssid = "NomeRete";
-const char *password = "PasswordRete";
-// URL del server per la trasmissione dei log
-const String serverUrl = "http://192.168.1.100:8080/logs";
+// Configurazione dell'Access Point
+const char *ssid = "ESP32_AP";      ///< SSID per l'Access Point.
+const char *password = "12345678"; ///< Password per l'Access Point.
 
 // Dichiarazioni
-WiFiManager wifiManager(ssid, password);
-DebugLogger *logger = DebugLogger::getInstance(serverUrl);
+WiFiManager wifiManager(ssid, password); ///< Gestore per l'Access Point WiFi.
 
+/**
+ * @brief Configurazione iniziale del sistema.
+ *
+ * Questa funzione configura la comunicazione seriale, avvia l'Access Point
+ * e avvia il server HTTP per i log.
+ */
 void setup()
 {
     Serial.begin(115200);
-    wifiManager.connect();
-    DebugLogger::getInstance()->log("Inizializzazione in corso...");
+
+    // Avvia l'Access Point
+    wifiManager.startAccessPoint();
+
+    // Avvia il server HTTP
+    DebugLogger::getInstance()->startServer();
+
+    // Log iniziali
+    DebugLogger::getInstance()->log("Flight controller started.", LogLevel::INFO);
 }
 
+/**
+ * @brief Ciclo principale del programma.
+ *
+ * Il ciclo principale gestisce il logging dei dati formattati e monitora
+ * lo stato del sistema tramite il server HTTP.
+ */
 void loop()
 {
-    // put your main code here, to run repeatedly:
-    // Gestione Wi-Fi in base allo stato
-    int currentState = 41;
-    if (currentState == 2)
-    {
-        wifiManager.handleConnection(); // Logica non bloccante per la connessione
-    }
-    else
-    {
-        wifiManager.disconnect();
-    }
-
-    // Log periodico
-    logger->log("Esempio di log.", currentState == 3);
-
-    // Trasmissione dei log solo se connesso
-    if (wifiManager.isConnected())
-    {
-        logger->transmitLogs();
-    }
+    // Log di debug
+    DebugLogger::getInstance()->printFormattedLogs();
 }

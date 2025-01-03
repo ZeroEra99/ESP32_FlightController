@@ -1,48 +1,43 @@
+/**
+ * @file WiFiManager.cpp
+ * @brief Implementazione della classe WiFiManager.
+ *
+ * Questa classe gestisce l'Access Point WiFi per il sistema, consentendo la creazione
+ * di una rete wireless dedicata e l'accesso tramite un indirizzo IP locale.
+ */
+
 #include "WiFiManager.h"
 
-WiFiManager::WiFiManager(const char* ssid, const char* password)
-    : ssid(ssid), password(password), connected(false), lastReconnectAttempt(0) {}
+/**
+ * @brief Costruttore della classe WiFiManager.
+ *
+ * Inizializza l'oggetto WiFiManager con i dettagli della rete AP.
+ *
+ * @param ssid SSID della rete AP.
+ * @param password Password della rete AP.
+ */
+WiFiManager::WiFiManager(const char* ssid, const char* password) : ssid(ssid), password(password) {}
 
-void WiFiManager::connect() {
-    WiFi.begin(ssid, password);
-    Serial.println("Connessione al Wi-Fi...");
+/**
+ * @brief Avvia l'Access Point.
+ *
+ * Configura e avvia l'Access Point WiFi utilizzando l'SSID e la password forniti.
+ * Stampa l'indirizzo IP assegnato per consentire l'accesso alla rete.
+ */
+void WiFiManager::startAccessPoint() {
+    WiFi.softAP(ssid, password);
+    Serial.println("Access Point avviato!");
+    Serial.print("Indirizzo IP: ");
+    Serial.println(WiFi.softAPIP());
 }
 
-void WiFiManager::disconnect() {
-    if (WiFi.status() == WL_CONNECTED) {
-        WiFi.disconnect();
-        connected = false;
-        Serial.println("Wi-Fi disconnessa.");
-    }
-}
-
-void WiFiManager::attemptConnection() {
-    if (WiFi.status() != WL_CONNECTED) {
-        WiFi.begin(ssid, password);
-        Serial.println("Tentativo di connessione al Wi-Fi...");
-    }
-}
-
-void WiFiManager::handleConnection() {
-    if (WiFi.status() == WL_CONNECTED) {
-        if (!connected) {
-            connected = true;
-            Serial.println("Connesso al Wi-Fi.");
-            Serial.print("Indirizzo IP: ");
-            Serial.println(WiFi.localIP());
-        }
-    } else {
-        if (millis() - lastReconnectAttempt > 5000) { // Riprova ogni 5 secondi
-            lastReconnectAttempt = millis();
-            attemptConnection();
-        }
-    }
-}
-
-bool WiFiManager::isConnected() {
-    return WiFi.status() == WL_CONNECTED;
-}
-
+/**
+ * @brief Ottiene l'indirizzo IP dell'Access Point.
+ *
+ * Restituisce l'indirizzo IP assegnato all'Access Point sotto forma di stringa.
+ *
+ * @return Stringa con l'indirizzo IP dell'AP.
+ */
 String WiFiManager::getLocalIP() {
-    return WiFi.localIP().toString();
+    return WiFi.softAPIP().toString();
 }

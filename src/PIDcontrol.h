@@ -3,7 +3,8 @@
  * @brief Dichiarazioni per la classe PIDcontrol.
  *
  * La classe implementa un controllore PID con supporto per offset dinamici
- * e limite sull'integrale.
+ * e limite sull'integrale. È utilizzata per gestire il controllo proporzionale,
+ * integrale e derivativo in sistemi dinamici.
  */
 
 #ifndef PID_CONTROL_H
@@ -14,8 +15,9 @@
  * @brief Implementazione di un controllore PID.
  *
  * Questa classe fornisce un controllore PID con termini proporzionale (P),
- * integrale (I) e derivativo (D). Include il supporto per offset dinamici
- * e un limite configurabile sull'integrale.
+ * integrale (I) e derivativo (D). Include il supporto per:
+ * - Offset dinamici sui guadagni PID.
+ * - Limite configurabile sul termine integrale per evitare windup.
  */
 class PIDcontrol
 {
@@ -31,6 +33,9 @@ public:
     /**
      * @brief Costruttore della classe PIDcontrol.
      *
+     * Inizializza il controllore PID con i guadagni specificati e un limite
+     * massimo per il termine integrale.
+     *
      * @param kp Guadagno proporzionale.
      * @param ki Guadagno integrale.
      * @param kd Guadagno derivativo.
@@ -41,8 +46,12 @@ public:
     /**
      * @brief Calcola il valore di controllo PID.
      *
-     * @param error Errore corrente.
-     * @param dt Intervallo di tempo dall'ultimo aggiornamento.
+     * Utilizza l'errore corrente e l'intervallo di tempo dall'ultimo aggiornamento
+     * per calcolare il valore di controllo PID. Supporta l'applicazione di offset
+     * dinamici sui guadagni proporzionale, integrale e derivativo.
+     *
+     * @param error Errore corrente rispetto al setpoint.
+     * @param dt Intervallo di tempo dall'ultimo aggiornamento (in secondi).
      * @param kp_offset Offset per il guadagno proporzionale.
      * @param ki_offset Offset per il guadagno integrale.
      * @param kd_offset Offset per il guadagno derivativo.

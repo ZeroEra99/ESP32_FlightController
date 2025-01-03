@@ -9,6 +9,8 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include "DataStructures.h"
+
 /**
  * @brief Matrice di rotazione per la conversione da quaternioni ad angoli di Eulero.
  *
@@ -26,6 +28,9 @@ static float axis[3][3] = {
 /**
  * @brief Controlla se un valore è compreso in un intervallo specificato.
  *
+ * Funzione generica per verificare se un valore si trova tra due limiti,
+ * indipendentemente dall'ordine di `min` e `max`.
+ *
  * @tparam T Tipo del valore da verificare.
  * @tparam U Tipo del limite minimo.
  * @tparam V Tipo del limite massimo.
@@ -37,16 +42,16 @@ static float axis[3][3] = {
 template <typename T, typename U, typename V>
 bool isInRange(T value, U min, V max)
 {
-    // Determiniamo il minimo e il massimo indipendentemente dall'ordine
     T lower = (min <= max) ? min : max;
     T upper = (min <= max) ? max : min;
 
-    // Controlliamo se il valore è nel range
     return value >= lower && value <= upper;
 }
 
 /**
  * @brief Converte un valore digitale in un valore PWM.
+ *
+ * Esegue una mappatura lineare tra un intervallo digitale e un intervallo PWM.
  *
  * @param value Valore digitale da convertire.
  * @param min_digital Valore minimo del range digitale.
@@ -60,6 +65,8 @@ int digital_to_pwm(double value, double min_digital, double max_digital, int min
 /**
  * @brief Converte un valore PWM in un valore digitale.
  *
+ * Esegue una mappatura lineare tra un intervallo PWM e un intervallo digitale.
+ *
  * @param pwm_value Valore PWM da convertire.
  * @param min_analog Valore minimo del range analogico (PWM).
  * @param max_analog Valore massimo del range analogico (PWM).
@@ -72,34 +79,44 @@ double pwm_to_digital(int pwm_value, int min_analog, int max_analog, double min_
 /**
  * @brief Calcola il coniugato di un quaternione.
  *
+ * Il coniugato di un quaternione è ottenuto invertendo il segno delle componenti vettoriali,
+ * mentre la componente scalare rimane invariata.
+ *
  * @param q Quaternione di input.
  * @param q_conj Quaternione coniugato in output.
  */
-void quaternion_conjugate(const float q[4], float q_conj[4]);
+void quaternion_conjugate(const Quaternion &q, Quaternion &q_conj);
 
 /**
  * @brief Moltiplica due quaternioni.
+ *
+ * Esegue la moltiplicazione tra due quaternioni, utile per comporre rotazioni nello spazio tridimensionale.
  *
  * @param q1 Primo quaternione.
  * @param q2 Secondo quaternione.
  * @param q_result Quaternione risultante.
  */
-void quaternion_multiply(const float q1[4], const float q2[4], float q_result[4]);
+void quaternion_multiply(const Quaternion &q1, const Quaternion &q2, Quaternion &q_result);
 
 /**
  * @brief Genera un quaternione da un asse e un angolo.
+ *
+ * Converte un asse di rotazione e un angolo in gradi in un quaternione corrispondente.
  *
  * @param axis Vettore dell'asse di rotazione.
  * @param angle_deg Angolo di rotazione in gradi.
  * @param q Quaternione generato.
  */
-void quaternion_from_axis_angle(float axis[3], float angle_deg, float q[4]);
+void quaternion_from_axis_angle(float axis[3], float angle_deg, Quaternion &q);
 
 /**
  * @brief Normalizza un quaternione.
  *
+ * Divide ogni componente del quaternione per la sua magnitudine per assicurare
+ * che rappresenti una rotazione valida (magnitudine uguale a 1).
+ *
  * @param q Quaternione da normalizzare.
  */
-void quaternion_normalize(float q[4]);
+void quaternion_normalize(Quaternion &q);
 
 #endif // UTILS_H

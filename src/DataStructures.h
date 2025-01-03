@@ -15,56 +15,10 @@
 /* ========================
  *   COSTANTI
  * ======================== */
-/**
- * @brief Dimensione di un quaternione.
- */
-#define QUATERNION_DIM 4
-
-/**
- * @brief Dimensione delle coordinate di Eulero.
- */
-#define EULER_DIM 3
 
 /* ========================
  *   ENUMERAZIONI
  * ======================== */
-/**
- * @brief Identificatori per i componenti di un quaternione.
- */
-enum Axis
-{
-  W, ///< Componente scalare del quaternione.
-  X, ///< Componente X del quaternione.
-  Y, ///< Componente Y del quaternione.
-  Z  ///< Componente Z del quaternione.
-};
-
-/**
- * @brief Tipi di input dal pilota.
- */
-enum PilotInput
-{
-  ROLL,
-  PITCH,
-  THROTTLE,
-  YAW,
-  SWA,
-  SWB,
-  SWC,
-  SWD,
-  VRA,
-  VRB
-};
-
-/**
- * @brief Indici per i parametri PID.
- */
-enum PID
-{
-  KP, ///< Guadagno proporzionale.
-  KI, ///< Guadagno integrale.
-  KD  ///< Guadagno derivativo.
-};
 
 /**
  * @brief Colori disponibili per i LED.
@@ -132,44 +86,122 @@ enum class ASSIST_MODE
 /* ========================
  *   STRUTTURE DATI
  * ======================== */
+
+/**
+ * @struct ReceiverPins
+ * @brief Struttura per memorizzare i pin del ricevitore.
+ *
+ * I pin rappresentano i canali fisici utilizzati per leggere i segnali
+ * dal ricevitore RC.
+ */
+struct ReceiverPins{
+  int x; ///< Pin per il rollio.
+  int y; ///< Pin per il beccheggio.
+  int throttle; ///< Pin per il throttle.
+  int z; ///< Pin per lo yaw.
+  int swa; ///< Pin per lo switch A.
+  int swb; ///< Pin per lo switch B.
+  int swc; ///< Pin per lo switch C.
+  int swd; ///< Pin per lo switch D.
+  int vra; ///< Pin per il potenziometro A.
+  int vrb; ///< Pin per il potenziometro B.
+};
+
+/**
+ * @struct Euler
+ * @brief Struttura per memorizzare tre componenti vettoriali di tipo float.
+ *
+ * Utilizzata per rappresentare velocità angolari, accelerazioni o altre grandezze vettoriali.
+ */
+struct Euler
+{
+  float x; ///< Componente X.
+  float y; ///< Componente Y.
+  float z; ///< Componente Z.
+};
+
+/**
+ * @struct Quaternion
+ * @brief Struttura per memorizzare un quaternione.
+ *
+ * Utilizzato per rappresentare orientamenti e rotazioni nello spazio tridimensionale.
+ */
+struct Quaternion
+{
+  float w; ///< Componente scalare.
+  float x; ///< Componente X.
+  float y; ///< Componente Y.
+  float z; ///< Componente Z.
+};
+
+/**
+ * @struct PID
+ * @brief Struttura per memorizzare i parametri di un controllore PID.
+ */
+struct PID{
+  float kp; ///< Guadagno proporzionale.
+  float ki; ///< Guadagno integrale.
+  float kd; ///< Guadagno derivativo.
+  float max_integral; ///< Limite massimo per l'integrale.
+};
+
+/**
+ * @struct AnalogOutput
+ * @brief Struttura per memorizzare i valori analogici di output.
+ */
+struct AnalogOutput{
+  int x; ///< Output per l'asse X.
+  int y; ///< Output per l'asse Y.
+  int z; ///< Output per l'asse Z.
+  int throttle; ///< Output per il throttle.
+};
+
+/**
+ * @struct DigitalOutput
+ * @brief Struttura per memorizzare i valori digitali di output.
+ */
+struct DigitalOutput{
+  float x; ///< Output per l'asse X.
+  float y; ///< Output per l'asse Y.
+  float z; ///< Output per l'asse Z.
+  float throttle; ///< Output per il throttle.
+};
+
 /**
  * @struct FlightData
  * @brief Struttura per memorizzare i dati di volo.
  *
- * Contiene informazioni su velocità, accelerazione, giroscopio, attitudine e posizione.
+ * Contiene informazioni su:
+ * - Velocità lineare.
+ * - Accelerazione lineare.
+ * - Velocità angolare (giroscopio).
+ * - Attitudine (orientamento sotto forma di quaternione).
  */
 struct FlightData
 {
-  float velocity[EULER_DIM];      ///< Velocità lineare.
-  float acceleration[EULER_DIM];  ///< Accelerazione lineare.
-  float gyro[EULER_DIM];          ///< Velocità angolare.
-  float attitude[QUATERNION_DIM]; ///< Attitudine rappresentata come quaternione.
-  float position[EULER_DIM];      ///< Posizione nello spazio.
+  Euler velocity;    ///< Velocità lineare.
+  Euler acceleration; ///< Accelerazione lineare.
+  Euler gyro;        ///< Velocità angolare.
+  Quaternion attitude; ///< Attitudine.
 };
 
 /**
- * @struct ControllerData
- * @brief Struttura per memorizzare i dati del controller.
+ * @struct PilotData
+ * @brief Struttura per memorizzare i dati di input dell'utente.
  *
- * Contiene input dell'utente, setpoint, errori PID e output per gli attuatori.
+ * Rappresenta i valori letti dai canali del ricevitore RC per il controllo del sistema.
  */
-struct ControllerData
-{
-  float user_input[IA6B_CHANNELS];         ///< Input ricevuti dal pilota.
-  float setpoint_attitude[QUATERNION_DIM]; ///< Setpoint dell'attitudine.
-
-  float acceleration[EULER_DIM];  ///< Accelerazione lineare misurata.
-  float velocity[EULER_DIM];      ///< Velocità lineare misurata.
-  float gyro[EULER_DIM];          ///< Velocità angolare misurata.
-  float attitude[QUATERNION_DIM]; ///< Attitudine misurata.
-
-  float error_gyro[EULER_DIM];                 ///< Errori del giroscopio per il PID.
-  float error_attitude[QUATERNION_DIM];        ///< Errori dell'attitudine per il PID.
-  float pid_tuning_offset_gyro[EULER_DIM];     ///< Offset di tuning per il PID del giroscopio.
-  float pid_tuning_offset_attitude[EULER_DIM]; ///< Offset di tuning per il PID dell'attitudine.
-
-  float servo_output[EULER_DIM]; ///< Output per i servomotori.
-  float esc_output;              ///< Output per l'ESC.
+struct PilotData{
+  float x; ///< Input per il rollio.
+  float y; ///< Input per il beccheggio.
+  float throttle; ///< Input per il throttle.
+  float z; ///< Input per lo yaw.
+  float swa; ///< Input per lo switch A.
+  float swb; ///< Input per lo switch B.
+  float swc; ///< Input per lo switch C.
+  float swd; ///< Input per lo switch D.
+  float vra; ///< Input per il potenziometro A.
+  float vrb; ///< Input per il potenziometro B.
 };
 
 #endif // DATA_STRUCTURES_H

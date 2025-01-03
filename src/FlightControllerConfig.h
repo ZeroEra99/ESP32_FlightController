@@ -1,56 +1,198 @@
+/**
+ * @file FlightControllerConfig.h
+ * @brief Configurazioni e parametri per il controllo di volo.
+ *
+ * Questo file contiene le definizioni dei parametri PID, dei limiti
+ * e delle soglie utilizzati per il controllo del sistema di volo.
+ */
+
 #ifndef FLIGHT_CONTROLLER_CONFIG_H
 #define FLIGHT_CONTROLLER_CONFIG_H
 
 /* ========================
  *   PARAMETRI PID ANGOLI
  * ======================== */
-// PID per il controllo degli angoli (ROLL, PITCH, YAW)
-#define KP_ATTITUDE_ROLL 0 // Guadagno proporzionale per ROLL
-#define KI_ATTITUDE_ROLL 0 // Guadagno integrale per ROLL
-#define KD_ATTITUDE_ROLL 0 // Guadagno derivativo per ROLL
+/**
+ * @def KP_ATTITUDE_X
+ * @brief Guadagno proporzionale per il controllo dell'angolo di rollio (ROLL).
+ */
+#define KP_ATTITUDE_X 0
 
-#define KP_ATTITUDE_PITCH 0 // Guadagno proporzionale per PITCH
-#define KI_ATTITUDE_PITCH 0 // Guadagno integrale per PITCH
-#define KD_ATTITUDE_PITCH 0 // Guadagno derivativo per PITCH
+/**
+ * @def KI_ATTITUDE_X
+ * @brief Guadagno integrale per il controllo dell'angolo di rollio (ROLL).
+ */
+#define KI_ATTITUDE_X 0
 
-#define KP_ATTITUDE_YAW 0 // Guadagno proporzionale per YAW
-#define KI_ATTITUDE_YAW 0 // Guadagno integrale per YAW
-#define KD_ATTITUDE_YAW 0 // Guadagno derivativo per YAW
+/**
+ * @def KD_ATTITUDE_X
+ * @brief Guadagno derivativo per il controllo dell'angolo di rollio (ROLL).
+ */
+#define KD_ATTITUDE_X 0
+
+/**
+ * @def KP_ATTITUDE_Y
+ * @brief Guadagno proporzionale per il controllo dell'angolo di beccheggio (PITCH).
+ */
+#define KP_ATTITUDE_Y 0
+
+/**
+ * @def KI_ATTITUDE_Y
+ * @brief Guadagno integrale per il controllo dell'angolo di beccheggio (PITCH).
+ */
+#define KI_ATTITUDE_Y 0
+
+/**
+ * @def KD_ATTITUDE_Y
+ * @brief Guadagno derivativo per il controllo dell'angolo di beccheggio (PITCH).
+ */
+#define KD_ATTITUDE_Y 0
+
+/**
+ * @def KP_ATTITUDE_Z
+ * @brief Guadagno proporzionale per il controllo dell'angolo di imbardata (YAW).
+ */
+#define KP_ATTITUDE_Z 0
+
+/**
+ * @def KI_ATTITUDE_Z
+ * @brief Guadagno integrale per il controllo dell'angolo di imbardata (YAW).
+ */
+#define KI_ATTITUDE_Z 0
+
+/**
+ * @def KD_ATTITUDE_Z
+ * @brief Guadagno derivativo per il controllo dell'angolo di imbardata (YAW).
+ */
+#define KD_ATTITUDE_Z 0
 
 /* ========================
  *   PARAMETRI PID VELOCITÀ ANGOLARI
  * ======================== */
-// PID per il controllo delle velocità angolari (ROLL, PITCH, YAW)
-#define KP_GYRO_ROLL 0 // Guadagno proporzionale per ROLL
-#define KI_GYRO_ROLL 0 // Guadagno integrale per ROLL
-#define KD_GYRO_ROLL 0 // Guadagno derivativo per ROLL
+/**
+ * @def KP_GYRO_X
+ * @brief Guadagno proporzionale per il controllo della velocità angolare sull'asse X (ROLL).
+ */
+#define KP_GYRO_X 0
 
-#define KP_GYRO_PITCH 0 // Guadagno proporzionale per PITCH
-#define KI_GYRO_PITCH 0 // Guadagno integrale per PITCH
-#define KD_GYRO_PITCH 0 // Guadagno derivativo per PITCH
+/**
+ * @def KI_GYRO_X
+ * @brief Guadagno integrale per il controllo della velocità angolare sull'asse X (ROLL).
+ */
+#define KI_GYRO_X 0
 
-#define KP_GYRO_YAW 0 // Guadagno proporzionale per YAW
-#define KI_GYRO_YAW 0 // Guadagno integrale per YAW
-#define KD_GYRO_YAW 0 // Guadagno derivativo per YAW
+/**
+ * @def KD_GYRO_X
+ * @brief Guadagno derivativo per il controllo della velocità angolare sull'asse X (ROLL).
+ */
+#define KD_GYRO_X 0
+
+/**
+ * @def KP_GYRO_Y
+ * @brief Guadagno proporzionale per il controllo della velocità angolare sull'asse Y (PITCH).
+ */
+#define KP_GYRO_Y 0
+
+/**
+ * @def KI_GYRO_Y
+ * @brief Guadagno integrale per il controllo della velocità angolare sull'asse Y (PITCH).
+ */
+#define KI_GYRO_Y 0
+
+/**
+ * @def KD_GYRO_Y
+ * @brief Guadagno derivativo per il controllo della velocità angolare sull'asse Y (PITCH).
+ */
+#define KD_GYRO_Y 0
+
+/**
+ * @def KP_GYRO_Z
+ * @brief Guadagno proporzionale per il controllo della velocità angolare sull'asse Z (YAW).
+ */
+#define KP_GYRO_Z 0
+
+/**
+ * @def KI_GYRO_Z
+ * @brief Guadagno integrale per il controllo della velocità angolare sull'asse Z (YAW).
+ */
+#define KI_GYRO_Z 0
+
+/**
+ * @def KD_GYRO_Z
+ * @brief Guadagno derivativo per il controllo della velocità angolare sull'asse Z (YAW).
+ */
+#define KD_GYRO_Z 0
 
 /* ========================
  *   LIMITI PID
  * ======================== */
-#define MAX_INTEGRAL_ATTITUDE 0 // Limite massimo per l'integrale del controllo degli angoli (disabilitato)
-#define MAX_INTEGRAL_GYRO 0     // Limite massimo per l'integrale delle velocità angolari (disabilitato)
-#define MAX_INTEGRAL_ANGLE 0    // Limite massimo per l'integrale del controllo degli angoli (disabilitato)
-#define PID_MAX_OFFSET 2        // Valore massimo per il tuning PID
-#define TUNING_TARGET_AXIS 0    // Asse di tuning PID - SPECIFICARE QUALE ASSE SI DESIDERA CALIBRARE
+/**
+ * @def MAX_INTEGRAL_ATTITUDE
+ * @brief Limite massimo per il termine integrale del controllo degli angoli.
+ */
+#define MAX_INTEGRAL_ATTITUDE 0
+
+/**
+ * @def MAX_INTEGRAL_GYRO
+ * @brief Limite massimo per il termine integrale del controllo delle velocità angolari.
+ */
+#define MAX_INTEGRAL_GYRO 0
+
+/**
+ * @def MAX_INTEGRAL_ANGLE
+ * @brief Limite massimo per il termine integrale del controllo dell'angolo.
+ */
+#define MAX_INTEGRAL_ANGLE 0
+
+/**
+ * @def PID_MAX_OFFSET
+ * @brief Valore massimo per il tuning dei parametri PID.
+ */
+#define PID_MAX_OFFSET 2
+
+/**
+ * @def TUNING_TARGET_AXIS
+ * @brief Asse target per il tuning dei parametri PID.
+ */
+#define TUNING_TARGET_AXIS 0
 
 /* ========================
  *   PARAMETRI DI VOLO
  * ======================== */
-#define MOVE_SPEED_THRESHOLD 0.1    // Soglia minima per considerare il sistema in movimento
-#define MOVE_ACCEL_THRESHOLD 0.1    // Soglia minima per considerare il sistema in accelerazione
-#define FORWARD_SPEED_THRESHOLD 0.1 // Soglia minima per considerare il sistema in movimento veloce
+/**
+ * @def MOVE_SPEED_THRESHOLD
+ * @brief Soglia minima per considerare il sistema in movimento (m/s).
+ */
+#define MOVE_SPEED_THRESHOLD 0.1
 
-#define AUTO_LAND_ROLL 0     // Angolo di roll per l'atterraggio automatico
-#define AUTO_LAND_PITCH 6    // Angolo di pitch per l'atterraggio automatico
-#define AUTO_LAND_THROTTLE 0 // Valore di throttle per l'atterraggio automatico
+/**
+ * @def MOVE_ACCEL_THRESHOLD
+ * @brief Soglia minima per considerare il sistema in accelerazione (m/s²).
+ */
+#define MOVE_ACCEL_THRESHOLD 0.1
+
+/**
+ * @def FORWARD_SPEED_THRESHOLD
+ * @brief Soglia minima per considerare il sistema in movimento veloce (m/s).
+ */
+#define FORWARD_SPEED_THRESHOLD 0.1
+
+/**
+ * @def AUTO_LAND_X
+ * @brief Angolo di rollio (ROLL) per l'atterraggio automatico.
+ */
+#define AUTO_LAND_X 0
+
+/**
+ * @def AUTO_LAND_Y
+ * @brief Angolo di beccheggio (PITCH) per l'atterraggio automatico.
+ */
+#define AUTO_LAND_Y 6
+
+/**
+ * @def AUTO_LAND_THROTTLE
+ * @brief Valore di throttle per l'atterraggio automatico.
+ */
+#define AUTO_LAND_THROTTLE 0
 
 #endif // FLIGHT_CONTROLLER_CONFIG_H

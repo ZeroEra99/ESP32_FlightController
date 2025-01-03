@@ -20,18 +20,18 @@
  */
 ESC::ESC(int pin, int pwm_min, int pwm_max) : Actuator(pin)
 {
-  Serial.print("ESC ");
-  Serial.print(pin);
-  Serial.print(" setup starting.\n");
+    Serial.print("ESC ");
+    Serial.print(pin);
+    Serial.print(" setup starting.\n");
 
-  this->pwm_min = pwm_min; ///< Inizializza il limite minimo PWM
-  this->pwm_max = pwm_max; ///< Inizializza il limite massimo PWM
-  esc.attach(pin);
-  esc.writeMicroseconds(pwm_min); ///< Imposta il segnale PWM al valore minimo iniziale
+    this->pwm_min = pwm_min; ///< Inizializza il limite minimo PWM
+    this->pwm_max = pwm_max; ///< Inizializza il limite massimo PWM
+    esc.attach(pin);
+    esc.writeMicroseconds(pwm_min); ///< Imposta il segnale PWM al valore minimo iniziale
 
-  Serial.print("ESC ");
-  Serial.print(pin);
-  Serial.print(" setup complete.\n");
+    Serial.print("ESC ");
+    Serial.print(pin);
+    Serial.print(" setup complete.\n");
 }
 
 /**
@@ -44,6 +44,16 @@ ESC::ESC(int pin, int pwm_min, int pwm_max) : Actuator(pin)
  */
 void ESC::write(int value)
 {
-  // Scrittura del valore sull'ESC
-  esc.writeMicroseconds(value);
+    // Controllo dei limiti per garantire un segnale sicuro
+    if (value < pwm_min)
+    {
+        value = pwm_min;
+    }
+    else if (value > pwm_max)
+    {
+        value = pwm_max;
+    }
+
+    // Scrittura del valore sull'ESC
+    esc.writeMicroseconds(value);
 }

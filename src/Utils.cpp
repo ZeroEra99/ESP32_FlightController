@@ -1,6 +1,9 @@
 /**
  * @file Utils.cpp
  * @brief Implementazione delle funzioni di utilità dichiarate in Utils.h.
+ *
+ * Questo file contiene funzioni utili per la gestione dei segnali PWM e dei quaternioni,
+ * utilizzati nel controllo di volo.
  */
 
 #include "Utils.h"
@@ -8,10 +11,10 @@
 
 /**
  * @brief Converte un valore digitale in un valore PWM.
- * 
- * Applica una mappatura lineare per convertire un valore digitale in un valore PWM, rispettando
- * i limiti specificati per il range analogico.
- * 
+ *
+ * Applica una mappatura lineare per convertire un valore digitale in un valore PWM,
+ * rispettando i limiti specificati per il range analogico.
+ *
  * @param value Valore digitale da convertire.
  * @param min_digital Valore minimo del range digitale.
  * @param max_digital Valore massimo del range digitale.
@@ -21,10 +24,8 @@
  */
 int digital_to_pwm(double value, double min_digital, double max_digital, int min_analog, int max_analog)
 {
-    // Formula di mappatura lineare per ottenere il valore PWM
     int pwm_value = (int)((value - min_digital) * (max_analog - min_analog) / (max_digital - min_digital) + min_analog);
 
-    // Verifica che il valore sia compreso nell'intervallo analogico
     if (pwm_value < min_analog)
     {
         pwm_value = min_analog;
@@ -39,10 +40,10 @@ int digital_to_pwm(double value, double min_digital, double max_digital, int min
 
 /**
  * @brief Converte un valore PWM in un valore digitale.
- * 
- * Applica una mappatura lineare per convertire un valore PWM in un valore digitale, rispettando
- * i limiti specificati per il range digitale.
- * 
+ *
+ * Applica una mappatura lineare per convertire un valore PWM in un valore digitale,
+ * rispettando i limiti specificati per il range digitale.
+ *
  * @param pwm_value Valore PWM da convertire.
  * @param min_analog Valore minimo del range analogico (PWM).
  * @param max_analog Valore massimo del range analogico (PWM).
@@ -52,9 +53,8 @@ int digital_to_pwm(double value, double min_digital, double max_digital, int min
  */
 double pwm_to_digital(int pwm_value, int min_analog, int max_analog, double min_digital, double max_digital)
 {
-    // Mappatura lineare del valore PWM nel range digitale
     double digital_value = (double)(pwm_value - min_analog) / (max_analog - min_analog) * (max_digital - min_digital) + min_digital;
-    // Verifica che il valore sia compreso nell'intervallo digitale
+
     if (digital_value < min_digital)
     {
         digital_value = min_digital;
@@ -63,80 +63,79 @@ double pwm_to_digital(int pwm_value, int min_analog, int max_analog, double min_
     {
         digital_value = max_digital;
     }
+
     return digital_value;
 }
 
 /**
  * @brief Calcola il coniugato di un quaternione.
- * 
+ *
  * Il coniugato di un quaternione è calcolato invertendo il segno delle componenti vettoriali.
- * 
+ *
  * @param q Quaternione di input.
  * @param q_conj Quaternione coniugato in output.
  */
-void quaternion_conjugate(const float q[4], float q_conj[4])
+void quaternion_conjugate(const Quaternion &q, Quaternion &q_conj)
 {
-    q_conj[0] = q[0];
-    q_conj[1] = -q[1];
-    q_conj[2] = -q[2];
-    q_conj[3] = -q[3];
+    q_conj.w = q.w;
+    q_conj.x = -q.x;
+    q_conj.y = -q.y;
+    q_conj.z = -q.z;
 }
 
 /**
  * @brief Moltiplica due quaternioni.
- * 
+ *
  * Esegue la moltiplicazione tra due quaternioni, utile per comporre rotazioni.
- * 
+ *
  * @param q1 Primo quaternione.
  * @param q2 Secondo quaternione.
  * @param q_result Quaternione risultante.
  */
-void quaternion_multiply(const float q1[4], const float q2[4], float q_result[4])
+void quaternion_multiply(const Quaternion &q1, const Quaternion &q2, Quaternion &q_result)
 {
-    q_result[0] = q1[0] * q2[0] - q1[1] * q2[1] - q1[2] * q2[2] - q1[3] * q2[3];
-    q_result[1] = q1[0] * q2[1] + q1[1] * q2[0] + q1[2] * q2[3] - q1[3] * q2[2];
-    q_result[2] = q1[0] * q2[2] - q1[1] * q2[3] + q1[2] * q2[0] + q1[3] * q2[1];
-    q_result[3] = q1[0] * q2[3] + q1[1] * q2[2] - q1[2] * q2[1] + q1[3] * q2[0];
+    q_result.w = q1.w * q2.w - q1.x * q2.x - q1.y * q2.y - q1.z * q2.z;
+    q_result.x = q1.w * q2.x + q1.x * q2.w + q1.y * q2.z - q1.z * q2.y;
+    q_result.y = q1.w * q2.y - q1.x * q2.z + q1.y * q2.w + q1.z * q2.x;
+    q_result.z = q1.w * q2.z + q1.x * q2.y - q1.y * q2.x + q1.z * q2.w;
 }
 
 /**
  * @brief Genera un quaternione da un asse e un angolo.
- * 
+ *
  * Converte un asse di rotazione e un angolo in gradi in un quaternione.
- * 
+ *
  * @param axis Vettore dell'asse di rotazione.
  * @param angle_deg Angolo di rotazione in gradi.
  * @param q Quaternione generato.
  */
-void quaternion_from_axis_angle(float axis[3], float angle_deg, float q[4])
+void quaternion_from_axis_angle(const float axis[3], float angle_deg, Quaternion &q)
 {
-    float angle_rad = angle_deg * M_PI / 180.0; // Converti gradi in radianti
+    float angle_rad = angle_deg * M_PI / 180.0f;
     float sin_half_angle = sin(angle_rad / 2);
-    q[0] = cos(angle_rad / 2);          // Componente scalare
-    q[1] = axis[0] * sin_half_angle;    // Componente x
-    q[2] = axis[1] * sin_half_angle;    // Componente y
-    q[3] = axis[2] * sin_half_angle;    // Componente z
+    q.w = cos(angle_rad / 2);
+    q.x = axis[0] * sin_half_angle;
+    q.y = axis[1] * sin_half_angle;
+    q.z = axis[2] * sin_half_angle;
 }
 
 /**
  * @brief Normalizza un quaternione.
- * 
+ *
  * Divide ogni componente del quaternione per la sua magnitudine per assicurare
  * che rappresenti una rotazione valida.
- * 
+ *
  * @param q Quaternione da normalizzare.
  */
-void quaternion_normalize(float q[4])
+void quaternion_normalize(Quaternion &q)
 {
-    // Calcola la magnitudine del quaternione
-    float magnitude = sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]);
+    float magnitude = sqrt(q.w * q.w + q.x * q.x + q.y * q.y + q.z * q.z);
 
-    // Evita la divisione per zero
     if (magnitude > 0.0f)
     {
-        for (int i = 0; i < 4; i++)
-        {
-            q[i] /= magnitude;
-        }
+        q.w /= magnitude;
+        q.x /= magnitude;
+        q.y /= magnitude;
+        q.z /= magnitude;
     }
 }

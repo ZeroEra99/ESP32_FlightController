@@ -18,13 +18,15 @@
  * @param pin Il pin hardware a cui il LED è collegato.
  * @param color Il colore del LED.
  */
-Light::Light(int pin, Color color) : Actuator(pin)
+Light::Light(int pin, Color color) : Actuator(pin) 
 {
     Serial.print("Light ");
     Serial.print(pin);
     Serial.print(" setup starting.\n");
 
     this->color = color;
+    this->blink_on = 0;
+    this->blink_off = 0;
     state = LightState::OFF;
     pinMode(pin, OUTPUT);
     digitalWrite(pin, LOW);
@@ -48,7 +50,9 @@ void Light::set_state(LightState state)
         return;
 
     if (Light::state != state)
+    {
         Light::state = state;
+    }
 }
 
 /**
@@ -72,6 +76,7 @@ void Light::set_state(int blink_on, int blink_off)
  *
  * Controlla e aggiorna il comportamento del LED in base al suo stato attuale.
  * Per il lampeggio, utilizza un approccio non bloccante basato su millis().
+ * Se il LED non è in modalità BLINK, viene acceso o spento in base allo stato impostato.
  */
 void Light::update()
 {
@@ -80,6 +85,7 @@ void Light::update()
 
     if (state != LightState::BLINK)
     {
+        // Accensione o spegnimento diretto
         digitalWrite(pin, state == LightState::ON ? HIGH : LOW);
         return;
     }
