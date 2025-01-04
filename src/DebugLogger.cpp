@@ -121,11 +121,18 @@ void DebugLogger::log(double value, LogLevel level, bool printToSerial, unsigned
 void DebugLogger::saveFormattedLog(const String &formattedLog)
 {
     size_t messageLength = formattedLog.length() + 1; // Include '\0'
-    if (writeIndex + messageLength < BUFFER_SIZE)
+    if (messageLength > BUFFER_SIZE)
+        return; // Scarta se il messaggio è troppo grande
+
+    // Controlla se c'è spazio sufficiente
+    if (writeIndex + messageLength >= BUFFER_SIZE)
     {
-        strcpy(&buffer[writeIndex], formattedLog.c_str());
-        writeIndex += messageLength;
+        writeIndex = 0; // Torna all'inizio (rotazione)
+        // Indica buffer pieno
     }
+
+    strcpy(&buffer[writeIndex], formattedLog.c_str());
+    writeIndex += messageLength;
 }
 
 /**
@@ -169,13 +176,73 @@ void DebugLogger::printFormattedLogs()
 }
 
 /**
+ * @brief Formatta un livello di log in una stringa leggibile.
+ */
+std::string formatLogLevel(LogLevel level)
+{
+    switch (level)
+    {
+    case LogLevel::DEBUG:
+        return "DEBUG";
+    case LogLevel::INFO:
+        return "INFO";
+    case LogLevel::WARNING:
+        return "WARNING";
+    case LogLevel::ERROR:
+        return "ERROR";
+    default:
+        return "UNKNOWN";
+    }
+}
+
+/**
  * @brief Gestisce la richiesta per i log via HTTP.
  *
  * Risponde alla richiesta HTTP `/logs` inviando il contenuto del buffer di log.
  */
 void DebugLogger::handleLogs()
 {
-    server.send(200, "text/plain", buffer);
+    String level = server.arg("level");
+    String cycle = server.arg("cycle");
+    String range = server.arg("range");
+
+    String response = "";
+
+    if (!cycle.isEmpty())
+    {
+        size_t cycleNum = cycle.toInt();
+        if (logData.find(cycleNum) != logData.end())
+        {
+            const auto &logsByLevel = logData.at(cycleNum).logsByLevel;
+            for (auto it = logsByLevel.begin(); it != logsByLevel.end(); ++it)
+            {
+                response += String(formatLogLevel(it->first).c_str()) + ": ";
+                for (const String &message : it->second)
+                {
+                    response += message + " | ";
+                }
+                response += "\n";
+            }
+        }
+    }
+    else if (!level.isEmpty())
+    {
+        LogLevel logLevel = static_cast<LogLevel>(level.toInt());
+        for (const auto &[cycleNum, logCycle] : logData)
+        {
+            const auto &messages = logCycle.logsByLevel.at(logLevel);
+            for (const String &message : messages)
+            {
+                response += "Cycle " + String(cycleNum) + ": " + message + "\n";
+            }
+        }
+    }
+    else
+    {
+        response = buffer; // Default behavior
+    }
+
+    server.send(200, "text/plain", response);
 }
 
 /**

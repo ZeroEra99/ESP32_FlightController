@@ -53,6 +53,7 @@ struct LogCycle
 class DebugLogger
 {
 private:
+
     static DebugLogger *instance;                 ///< Singleton della classe.
     static constexpr size_t BUFFER_SIZE = 153600; ///< Dimensione del buffer per i log.
     char buffer[BUFFER_SIZE];                     ///< Buffer per memorizzare i log formattati.

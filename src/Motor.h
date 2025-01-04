@@ -46,7 +46,7 @@ public:
      *
      * @param value Il valore da inviare al servomotore (in gradi).
      */
-    void write(int value) override;
+    void write(int value);
 };
 
 #endif // MOTOR_H

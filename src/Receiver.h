@@ -43,7 +43,7 @@ public:
      *
      * @return Struttura `PilotData` contenente i dati del pilota.
      */
-    PilotDataAnalog read();
+    bool read(PilotDataAnalog &data);
 };
 
 #endif // RECEIVER_H

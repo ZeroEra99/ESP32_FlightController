@@ -52,19 +52,19 @@ BNO055::BNO055()
  *
  * @return Una struttura `FlightData` contenente i dati letti dal sensore.
  */
-FlightData BNO055::read()
+bool BNO055::read(FlightData &data)
 {
     // Leggi i dati dalla IMU
     imu::Vector<3> angular_velocities = bno055.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);
     imu::Quaternion quaternion = bno055.getQuat();
     sensors_event_t linearAccelData;
     sensors_event_t orientationData;
-    bno055.getEvent(&linearAccelData, Adafruit_BNO055::VECTOR_LINEARACCEL);
-    bno055.getEvent(&orientationData, Adafruit_BNO055::VECTOR_EULER);
+    if(bno055.getEvent(&linearAccelData, Adafruit_BNO055::VECTOR_LINEARACCEL)
+    ||bno055.getEvent(&orientationData, Adafruit_BNO055::VECTOR_EULER))
+    return false;
 
     // Creazione della struttura FlightData
     static double xVel = 0, yVel = 0, zVel = 0; ///< Velocità integrate
-    FlightData data;
 
     // Velocità angolari (giroscopio)
     data.gyro.x = angular_velocities.x();
@@ -101,5 +101,5 @@ FlightData BNO055::read()
 
     data.forward_speed =  ACCEL_VEL_TRANSITION * linearAccelData.acceleration.x / cos(DEG_2_RAD * orientationData.orientation.x);
 
-    return data;
+    return true;
 }

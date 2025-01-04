@@ -32,28 +32,20 @@ FlightController::FlightController(PilotData &pilot_data, FlightData &flight_dat
     desired_attitude = {1, 0, 0, 0};
     pid_tuning_offset_gyro = {0, 0, 0, 0};
     pid_tuning_offset_attitude = {0, 0, 0, 0};
+    error = {0};
 }
 
 /**
- * @brief Calcola i dati di controllo basandosi sulle modalità operative e sull'input.
+ * @brief Calcola gli offset dinamici per il tuning dei PID.
  *
- * Questo metodo aggiorna gli errori di velocità angolare e di attitudine,
- * e calcola l'attitudine desiderata basandosi sugli input del pilota.
+ * Questo metodo calcola gli offset dinamici per il tuning dei PID in base
+ * alla modalità operativa del controller e all'asse target per la calibrazione.
  *
- * @param dt Intervallo di tempo dall'ultimo aggiornamento (in secondi).
- * @param pilot_data Input del pilota.
- * @param flight_data Dati di volo attuali.
- * @param digital_output Output digitali calcolati.
- * @param assist_mode Modalità di assistenza (manuale, stabilizzato, controllo attitudine).
- * @param state Stato attuale del sistema.
- * @param error Tipo di errore rilevato.
+ * @param assist_mode Tipo di assistenza attiva.
  * @param controller_mode Modalità operativa del controller.
  */
-void FlightController::compute_data(double dt, PilotData &pilot_data, FlightData &flight_data, DigitalOutput &digital_output, ASSIST_MODE assist_mode, STATE state, ERROR_TYPE error, CONTROLLER_MODE controller_mode)
+void FlightController::compute_pid_offset(ASSIST_MODE assist_mode, CONTROLLER_MODE controller_mode, PilotData &pilot_data)
 {
-    if (assist_mode == ASSIST_MODE::MANUAL)
-        return;
-
     switch (controller_mode)
     {
     case CONTROLLER_MODE::STANDARD:
@@ -79,6 +71,30 @@ void FlightController::compute_data(double dt, PilotData &pilot_data, FlightData
     default:
         break;
     }
+}
+
+/**
+ * @brief Calcola i dati di controllo basandosi sulle modalità operative e sull'input.
+ *
+ * Questo metodo aggiorna gli errori di velocità angolare e di attitudine,
+ * e calcola l'attitudine desiderata basandosi sugli input del pilota.
+ *
+ * @param dt Intervallo di tempo dall'ultimo aggiornamento (in secondi).
+ * @param pilot_data Input del pilota.
+ * @param flight_data Dati di volo attuali.
+ * @param digital_output Output digitali calcolati.
+ * @param assist_mode Modalità di assistenza (manuale, stabilizzato, controllo attitudine).
+ * @param state Stato attuale del sistema.
+ * @param error Tipo di errore rilevato.
+ * @param controller_mode Modalità operativa del controller.
+ */
+void FlightController::compute_data(double dt, PilotData &pilot_data, FlightData &flight_data, DigitalOutput &digital_output, ASSIST_MODE assist_mode, STATE state, Errors error, CONTROLLER_MODE controller_mode)
+{
+    if (assist_mode == ASSIST_MODE::MANUAL || error.IMU_ERROR)
+        return;
+
+    // Calcola gli offset dinamici per il tuning dei PID
+    compute_pid_offset(assist_mode, controller_mode, pilot_data);
 
     // Calcolo dell'errore di velocità angolare in modalità GYRO_STABILIZED
     if (assist_mode == ASSIST_MODE::GYRO_STABILIZED)
@@ -91,7 +107,7 @@ void FlightController::compute_data(double dt, PilotData &pilot_data, FlightData
     // Calcolo dell'errore di attitudine in modalità ATTITUDE_CONTROL
     if (assist_mode == ASSIST_MODE::ATTITUDE_CONTROL)
     {
-        if (error != ERROR_TYPE::PILOT_ERROR_AXIS)
+        if (!error.PILOT_ERROR)
         {
             // Calcolo dell'attitudine desiderata dai dati del pilota
             float axis_roll[3] = {1, 0, 0};
@@ -147,7 +163,7 @@ void FlightController::compute_data(double dt, PilotData &pilot_data, FlightData
  */
 void FlightController::control(double dt, FlightData &flight_data, PilotData &pilot_data, DigitalOutput &digital_output, ASSIST_MODE assist_mode, STATE state, CALIBRATION_TARGET calibration_target)
 {
-    if (assist_mode == ASSIST_MODE::MANUAL)
+    if (assist_mode == ASSIST_MODE::MANUAL || error.IMU_ERROR)
         return;
 
     if (assist_mode == ASSIST_MODE::GYRO_STABILIZED)

@@ -15,6 +15,7 @@
 #include "bno055.h"
 #include "esc.h"
 #include "motor.h"
+#include "LED.h"
 
 /**
  * @class SystemController
@@ -45,16 +46,6 @@ private:
      */
     void stop();
 
-    /**
-     * @brief Attiva la modalità failsafe in caso di errore critico.
-     *
-     * Questa funzione viene invocata per gestire errori come malfunzionamenti
-     * dei sensori o perdita di controllo.
-     *
-     * @param error Tipo di errore rilevato.
-     */
-    void failsafe(ERROR_TYPE error);
-
     // Componenti fisiche
     ESC esc;           ///< Controlla il motore tramite segnali PWM.
     Motor servo_x;     ///< Servomotore per il controllo del rollio.
@@ -62,6 +53,9 @@ private:
     Motor servo_z;     ///< Servomotore per il controllo dell'imbardata.
     Receiver receiver; ///< Ricevitore RC per i comandi del pilota.
     BNO055 imu;        ///< Sensore IMU per l'orientamento e la velocità del sistema.
+    LED led_green;     ///< LED verde per lo stato ARMED.
+    LED led_red;       ///< LED rosso per lo stato DISARMED.
+    LED led_rgb;       ///< LED RGB per la modalità di assistenza e gli errori
 
     // Componenti logiche
     FlightController flightController{
@@ -74,12 +68,14 @@ private:
     STATE state;                           ///< Stato attuale del controller.
     ASSIST_MODE assist_mode;               ///< Modalità di assistenza corrente.
     CONTROLLER_MODE controller_mode;       ///< Modalità di controllo corrente.
-    ERROR_TYPE error_type;                 ///< Tipo di errore rilevato.
+    Errors error;                          ///< Tipo di errore rilevato.
     CALIBRATION_TARGET calibration_target; ///< Asse target per la calibrazione PID.
 
     // Dati
-    FlightData flight_data; ///< Dati di volo attuali (accelerazione, velocità, orientamento, ecc.).
-    PilotData pilot_data;   ///< Input ricevuti dal pilota tramite il ricevitore RC.
+    FlightData imu_data;      ///< Dati di accelerazione, velocità angolare e orientamento dall'IMU.
+    PilotDataAnalog receiver_data; ///< Input analogici ricevuti dal ricevitore RC.
+    FlightData flight_data;        ///< Dati di volo attuali (accelerazione, velocità, orientamento, ecc.).
+    PilotData pilot_data;          ///< Input ricevuti dal pilota tramite il ricevitore RC.
 
     // Output
     DigitalOutput digital_output; ///< Valori digitali di output elaborati.
@@ -117,6 +113,14 @@ public:
      * e le modalità di controllo basandosi sull'input del pilota.
      */
     void update_modes();
+
+    /**
+     * @brief Verifica gli errori rilevati e aggiorna lo stato del sistema.
+     * 
+     * Questo metodo verifica la presenza di errori rilevati e aggiorna lo stato
+     * del sistema in base alla presenza di errori sul pilota o sull'IMU.
+     */
+    void check_errors();
 
     /**
      * @brief Aggiorna gli stati dei LED in base allo stato del sistema.

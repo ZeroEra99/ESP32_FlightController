@@ -54,15 +54,22 @@
 #define LED_PIN_GREEN 27
 
 /**
- * @def LED_PIN_BLUE
- * @brief Pin associato al LED blu.
+ * @def LED_PIN_RGB_RED
+ * @brief Pin associato al canale rosso del diodo RGB
  */
-#define LED_PIN_BLUE 26
+#define LED_PIN_RGB_RED 26
 
 /**
- * @def LED_PIN_BLUE
- * @brief Pin associato al LED blu.
+ * @def LED_PIN_RGB_GREEN
+ * @brief Pin associato al canale verde del diodo RGB
  */
-#define LED_PIN_BLUE_2 25
+#define LED_PIN_RGB_GREEN 25
+
+/**
+ * @def LED_PIN_RGB_BLUE
+ * @brief Pin associato al canale blu del diodo RGB
+ */
+#define LED_PIN_RGB_BLUE 33
+
 
 #endif // HARDWARE_PARAMETERS_H

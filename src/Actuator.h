@@ -36,16 +36,6 @@ public:
    */
   Actuator(int pin) : pin(pin) {};
 
-  /**
-   * @brief Scrive un valore sull'attuatore.
-   *
-   * Metodo astratto che deve essere implementato dalle classi derivate.
-   * Ogni implementazione deve specificare come inviare un valore
-   * (es. angolo per un servo o intensità per un LED).
-   *
-   * @param value Il valore da inviare all'attuatore.
-   */
-  virtual void write(int value) = 0;
 };
 
 #endif // ACTUATOR_H

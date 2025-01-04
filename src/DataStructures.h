@@ -20,9 +20,13 @@
  */
 enum class Color
 {
-  RED,   ///< Rosso.
-  GREEN, ///< Verde.
-  BLUE   ///< Blu.
+  RED,        ///< Rosso.
+  GREEN,      ///< Verde.
+  BLUE,       ///< Blu.
+  LIGHT_BLUE, ///< Blu chiaro.
+  WHITE,      ///< Bianco.
+  PURPLE,     ///< Viola.
+  NONE
 };
 
 /**
@@ -40,7 +44,7 @@ enum class LightState
  */
 enum class STATE
 {
-  FAILSAFE = -1, ///< Modalità di sicurezza.
+  FAILSAFE = -1, ///< Modalità failsafe.
   DISARMED = 0,  ///< Sistema disarmato.
   ARMED = 1,     ///< Sistema armato.
 };
@@ -50,28 +54,10 @@ enum class STATE
  */
 enum class CONTROLLER_MODE
 {
-  ERROR = -1,     ///< Modalità errore.
   STANDARD = 0,   ///< Modalità standard.
   KP_CALIBRATION, ///< Calibrazione del guadagno proporzionale.
   KI_CALIBRATION, ///< Calibrazione del guadagno integrale.
   KD_CALIBRATION  ///< Calibrazione del guadagno derivativo.
-};
-
-/**
- * @brief Tipologie di errore.
- */
-enum class ERROR_TYPE
-{
-  NONE, ///< Nessun errore.
-
-  PILOT_ERROR_AXIS, ///< Errore sull'asse del pilota.
-  PILOT_ERROR_SW,   ///< Errore sugli switch del pilota.
-
-  IMU_ERROR_QUATERNION, ///< Errore sul quaternione dell'IMU.
-  IMU_ERROR_GYRO,       ///< Errore sul giroscopio dell'IMU.
-  IMU_ERROR_ACCEL,      ///< Errore sull'accelerometro dell'IMU.
-
-  CONTROLLER_ERROR ///< Errore sul controllore.
 };
 
 /**
@@ -219,6 +205,19 @@ struct PilotDataAnalog
   int swd;      ///< Input per lo switch D analogico.
   int vra;      ///< Input per il potenziometro A analogico.
   int vrb;      ///< Input per il potenziometro B analogico.
+};
+
+/**
+ * @struct Errors
+ * @brief Struttura per memorizzare i tipi di errore rilevati.
+ *
+ * Contiene informazioni sui tipi di errore rilevati dal sistema.
+ */
+struct Errors
+{
+  bool PILOT_ERROR;    ///< Errore sul pilota.
+  bool IMU_ERROR;      ///< Errore sull'IMU.
+  bool DATA_ERROR; ///< Errore sul controllore.
 };
 
 #endif // DATA_STRUCTURES_H

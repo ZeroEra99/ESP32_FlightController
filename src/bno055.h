@@ -51,7 +51,7 @@ public:
    * - Accelerazione lineare.
    * - Velocità lineare calcolata.
    */
-  FlightData read();
+  bool read(FlightData &data);
 };
 
 #endif // BNO_055_H

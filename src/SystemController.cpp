@@ -1,5 +1,6 @@
 #include "SystemController.h"
 #include "Utils.h"
+#include "DebugLogger.h"
 
 /// @brief Porta seriale per la comunicazione con il ricevitore.
 static HardwareSerial serialPort = IBUS_RX_PIN;
@@ -16,6 +17,9 @@ SystemController::SystemController() : esc(ESC_PIN, PWM_MIN, PWM_MAX),
                                        servo_z(SERVO_PIN_Z, SERVO_MIN, SERVO_MAX),
                                        receiver(serialPort),
                                        imu(),
+                                       led_red(LED_PIN_RED),
+                                       led_green(LED_PIN_GREEN),
+                                       led_rgb(LED_PIN_RGB_RED, LED_PIN_RGB_GREEN, LED_PIN_RGB_BLUE),
                                        state(STATE::DISARMED),
                                        assist_mode(ASSIST_MODE::MANUAL),
                                        controller_mode(CONTROLLER_MODE::STANDARD),
@@ -25,8 +29,9 @@ SystemController::SystemController() : esc(ESC_PIN, PWM_MIN, PWM_MAX),
     assist_mode = ASSIST_MODE::MANUAL;
     controller_mode = CONTROLLER_MODE::STANDARD;
     calibration_target = CALIBRATION_TARGET::X;
-    error_type = ERROR_TYPE::NONE;
-
+    error = {0};
+    imu_data = {0};
+    receiver_data = {0};
     flight_data = {0};
     pilot_data = {0};
     digital_output = {0};
@@ -40,9 +45,9 @@ SystemController::SystemController() : esc(ESC_PIN, PWM_MIN, PWM_MAX),
  */
 void SystemController::start()
 {
-    Serial.print("Starting flight controller.\n");
+    DebugLogger::getInstance()->log("Starting flight controller.\n", LogLevel::INFO);
     state = STATE::ARMED;
-    Serial.print("Flight controller started.\n");
+    DebugLogger::getInstance()->log("Flight controller started.\n", LogLevel::INFO);
 }
 
 /**
@@ -52,21 +57,9 @@ void SystemController::start()
  */
 void SystemController::stop()
 {
-    Serial.print("Stopping flight controller.\n");
+    DebugLogger::getInstance()->log("Stopping flight controller.\n", LogLevel::INFO);
     state = STATE::DISARMED;
-    Serial.print("Flight controller stopped.\n");
-}
-
-/**
- * @brief Attiva la modalità failsafe in caso di errore critico.
- *
- * Interviene in caso di errori come perdita di segnale o malfunzionamento dei sensori.
- *
- * @param error Tipo di errore rilevato.
- */
-void SystemController::failsafe(ERROR_TYPE error)
-{
-    // Implementazione da aggiungere.
+    DebugLogger::getInstance()->log("Flight controller stopped.\n", LogLevel::INFO);
 }
 
 /**
@@ -77,7 +70,12 @@ void SystemController::failsafe(ERROR_TYPE error)
  */
 void SystemController::read_imu()
 {
-    FlightData imu_data = imu.read();
+    if (imu.read(imu_data))
+    {
+        error.IMU_ERROR = true;
+        return;
+    }
+    error.IMU_ERROR = false;
     flight_data.acceleration = imu_data.acceleration;
     flight_data.gyro = imu_data.gyro;
     flight_data.velocity = imu_data.velocity;
@@ -92,14 +90,18 @@ void SystemController::read_imu()
  */
 void SystemController::read_receiver()
 {
-    PilotDataAnalog receiver_data = receiver.read();
-
+    if (!receiver.read(receiver_data))
+    {
+        error.PILOT_ERROR = true;
+        return;
+    }
+    error.PILOT_ERROR = false;
     if (isInRange(receiver_data.throttle, PWM_MIN, PWM_MIN + PWM_MAX * ARM_TOLERANCE * 0.01) &&
         isInRange(receiver_data.y, PWM_MIN, PWM_MIN + PWM_MAX * ARM_TOLERANCE * 0.01))
     {
         if (isInRange(receiver_data.z, PWM_MAX, PWM_MAX - PWM_MAX * ARM_TOLERANCE * 0.01) &&
             isInRange(receiver_data.x, PWM_MIN, PWM_MIN + PWM_MAX * ARM_TOLERANCE * 0.01) &&
-            state == STATE::ARMED)
+            (state == STATE::ARMED))
         {
             stop();
         }
@@ -124,7 +126,7 @@ void SystemController::read_receiver()
     pilot_data.vra = pwm_to_digital(receiver_data.vra, PWM_MIN, PWM_MAX, VRA_MIN, VRA_MAX);
     pilot_data.vrb = pwm_to_digital(receiver_data.vrb, PWM_MIN, PWM_MAX, VRB_MIN, VRB_MAX);
 }
-
+#include "prayers.h"
 /**
  * @brief Aggiorna le modalità operative del sistema.
  *
@@ -165,10 +167,10 @@ void SystemController::update_modes()
     {
         if (pilot_data.swa == mode.swa &&
             (mode.swb == -1 || pilot_data.swb == mode.swb) &&
-            assist_mode != mode.mode && state != STATE::FAILSAFE)
+            assist_mode != mode.mode)
         {
             assist_mode = mode.mode;
-            Serial.println(mode.message);
+            DebugLogger::getInstance()->log(mode.message, LogLevel::INFO);
             break;
         }
     }
@@ -180,12 +182,48 @@ void SystemController::update_modes()
             controller_mode != mode.mode)
         {
             controller_mode = mode.mode;
-            Serial.println(mode.message);
+            DebugLogger::getInstance()->log(mode.message, LogLevel::INFO);
             break;
         }
     }
 }
 
+/**
+ * @brief Verifica gli errori rilevati e aggiorna lo stato del sistema.
+ *
+ * Verifica gli errori rilevati e aggiorna lo stato del sistema in base alla presenza
+ * di errori di comunicazione, di sensori o di input del pilota.
+ */
+void SystemController::check_errors()
+{
+    if (!error.IMU_ERROR && !error.PILOT_ERROR && state == STATE::FAILSAFE)
+    {
+        state = STATE::ARMED;
+    }
+    else
+    {
+        if (state != STATE::FAILSAFE)
+            state = STATE::FAILSAFE;
+
+        if(error.IMU_ERROR && error.PILOT_ERROR)
+        {
+            DebugLogger::getInstance()->log("IMU and pilot error detected.\n", LogLevel::ERROR);
+            STATE::DISARMED;
+        }
+        if (error.IMU_ERROR)
+        {
+            DebugLogger::getInstance()->log("IMU error detected.\n", LogLevel::ERROR);
+            if(assist_mode != ASSIST_MODE::MANUAL)
+                assist_mode = ASSIST_MODE::MANUAL;
+        }
+        else if (error.PILOT_ERROR)
+        {
+            DebugLogger::getInstance()->log("Pilot error detected.\n", LogLevel::ERROR);
+            if(assist_mode != ASSIST_MODE::ATTITUDE_CONTROL)
+                assist_mode = ASSIST_MODE::ATTITUDE_CONTROL;
+        }
+    }
+}
 /**
  * @brief Aggiorna gli stati dei LED in base allo stato del sistema.
  *
@@ -194,26 +232,41 @@ void SystemController::update_modes()
  */
 void SystemController::update_leds()
 {
-    // Drone armato:
-    // - LED verde lampeggi pieni
-    // - LED rosso spento
-    // RGB in base alla modalità
-    // Bianco per assistenza manuale
-    // Giallo per stabilizzazione giroscopica
-    // Blu per controllo di attitudine
 
-    // Drone disarmato:
-    // - LED verde lampeggi scarsi
-    // - LED rosso spento
-    // - RGB spento
-
-    // Modalità failsafe:
-    // - LED verde spento
-    // - LED rosso lampeggi veloci
-    // RGB in base all'errore
-    // Bianco per errore di imu
-    // Giallo per errore di ricevitore
-    // Blu per errore del controller
+    switch (state)
+    {
+    case STATE::ARMED:
+        led_green.set_state(BLINK_ON, BLINK_OFF / 5);
+        led_red.set_state(LightState::OFF);
+        switch (assist_mode)
+        {
+        case ASSIST_MODE::MANUAL:
+            led_rgb.set_state(LightState::ON, Color::WHITE);
+            break;
+        case ASSIST_MODE::GYRO_STABILIZED:
+            led_rgb.set_state(LightState::ON, Color::LIGHT_BLUE);
+            break;
+        case ASSIST_MODE::ATTITUDE_CONTROL:
+            led_rgb.set_state(LightState::ON, Color::PURPLE);
+            break;
+        }
+        break;
+    case STATE::DISARMED:
+        led_green.set_state(BLINK_ON / 5, BLINK_OFF);
+        led_red.set_state(LightState::OFF); // On per problemi di rete
+        led_rgb.set_state(LightState::OFF); // Informazioni sul buffer
+        break;
+    case STATE::FAILSAFE:
+        led_green.set_state(LightState::OFF);
+        led_red.set_state(BLINK_ON / 5, BLINK_OFF / 3);
+        if (error.PILOT_ERROR)
+            led_rgb.set_state(BLINK_ON / 5, BLINK_OFF / 5, Color::WHITE);
+        if (error.IMU_ERROR)
+            led_rgb.set_state(BLINK_ON / 5, BLINK_OFF / 5, Color::LIGHT_BLUE);
+        if (error.DATA_ERROR)
+            led_rgb.set_state(BLINK_ON / 5, BLINK_OFF / 5, Color::PURPLE);
+        break;
+    }
 }
 
 /**
@@ -235,74 +288,86 @@ void SystemController::control(double dt)
  */
 void SystemController::compute_output()
 {
-    // Calcola la velocità lungo l'asse di movimento in avanti
-    double forward_speed = flight_data.forward_speed; // Supponendo che l'asse X rappresenti il movimento in avanti
 
-    // Determina il fattore di riduzione
-    double reduction_factor = 1.0;
-    if (abs(forward_speed) > FORWARD_SPEED_THRESHOLD)
+    if (!error.IMU_ERROR)
     {
-        reduction_factor = SERVO_REDUCTION_FACTOR +
-                           (1.0 - SERVO_REDUCTION_FACTOR) *
-                               (FORWARD_SPEED_THRESHOLD / abs(forward_speed));
-    }
-
-    // Mappa i valori digitali in valori PWM
-    if (assist_mode != ASSIST_MODE::MANUAL && controller_mode != CONTROLLER_MODE::ERROR)
-    {
-
-        if (controller_mode != CONTROLLER_MODE::STANDARD)
+        // Mappa i valori digitali in valori PWM
+        if (assist_mode != ASSIST_MODE::MANUAL)
         {
-            switch (calibration_target)
+
+            if (controller_mode != CONTROLLER_MODE::STANDARD)
             {
-            case CALIBRATION_TARGET::X:
+                switch (calibration_target)
+                {
+                case CALIBRATION_TARGET::X:
+                    analog_output.x = digital_to_pwm(digital_output.x, -ROLL_MAX, ROLL_MAX, SERVO_MIN, SERVO_MAX);
+                    analog_output.y = digital_to_pwm(pilot_data.y, -PITCH_MAX, PITCH_MAX, SERVO_MIN, SERVO_MAX);
+                    analog_output.z = digital_to_pwm(pilot_data.z, -YAW_MAX, YAW_MAX, SERVO_MIN, SERVO_MAX);
+                    break;
+                case CALIBRATION_TARGET::Y:
+                    calibration_target = CALIBRATION_TARGET::Y;
+                    analog_output.x = digital_to_pwm(digital_output.x, -ROLL_MAX, ROLL_MAX, SERVO_MIN, SERVO_MAX);
+                    analog_output.y = digital_to_pwm(digital_output.y, -PITCH_MAX, PITCH_MAX, SERVO_MIN, SERVO_MAX);
+                    analog_output.z = digital_to_pwm(pilot_data.z, -YAW_MAX, YAW_MAX, SERVO_MIN, SERVO_MAX);
+                    break;
+                case CALIBRATION_TARGET::Z:
+                    calibration_target = CALIBRATION_TARGET::Z;
+                    analog_output.z = digital_to_pwm(digital_output.x, -ROLL_MAX, ROLL_MAX, SERVO_MIN, SERVO_MAX);
+                    analog_output.y = digital_to_pwm(digital_output.y, -PITCH_MAX, PITCH_MAX, SERVO_MIN, SERVO_MAX);
+                    analog_output.z = digital_to_pwm(digital_output.z, -YAW_MAX, YAW_MAX, SERVO_MIN, SERVO_MAX);
+                    break;
+                default:
+                    break;
+                }
+            }
+            else
+            {
                 analog_output.x = digital_to_pwm(digital_output.x, -ROLL_MAX, ROLL_MAX, SERVO_MIN, SERVO_MAX);
-                analog_output.y = digital_to_pwm(pilot_data.y, -PITCH_MAX, PITCH_MAX, SERVO_MIN, SERVO_MAX);
-                analog_output.z = digital_to_pwm(pilot_data.z, -YAW_MAX, YAW_MAX, SERVO_MIN, SERVO_MAX);
-                break;
-            case CALIBRATION_TARGET::Y:
-                calibration_target = CALIBRATION_TARGET::Y;
-                analog_output.x = digital_to_pwm(pilot_data.x, -ROLL_MAX, ROLL_MAX, SERVO_MIN, SERVO_MAX);
                 analog_output.y = digital_to_pwm(digital_output.y, -PITCH_MAX, PITCH_MAX, SERVO_MIN, SERVO_MAX);
-                analog_output.z = digital_to_pwm(pilot_data.z, -YAW_MAX, YAW_MAX, SERVO_MIN, SERVO_MAX);
-                break;
-            case CALIBRATION_TARGET::Z:
-                calibration_target = CALIBRATION_TARGET::Z;
-                analog_output.z = digital_to_pwm(pilot_data.x, -ROLL_MAX, ROLL_MAX, SERVO_MIN, SERVO_MAX);
-                analog_output.y = digital_to_pwm(pilot_data.y, -PITCH_MAX, PITCH_MAX, SERVO_MIN, SERVO_MAX);
                 analog_output.z = digital_to_pwm(digital_output.z, -YAW_MAX, YAW_MAX, SERVO_MIN, SERVO_MAX);
-                break;
-            default:
-                break;
+                if (!error.PILOT_ERROR)
+                    analog_output.throttle = digital_to_pwm(digital_output.throttle, THROTTLE_MIN, THROTTLE_MAX, PWM_MIN, PWM_MAX);
+                else
+                    analog_output.throttle = digital_to_pwm(AUTO_LAND_THROTTLE, THROTTLE_MIN, THROTTLE_MAX, PWM_MIN, PWM_MAX);
             }
         }
         else
         {
-            analog_output.x = digital_to_pwm(digital_output.x, -ROLL_MAX, ROLL_MAX, SERVO_MIN, SERVO_MAX);
-            analog_output.y = digital_to_pwm(digital_output.y, -PITCH_MAX, PITCH_MAX, SERVO_MIN, SERVO_MAX);
-            analog_output.z = digital_to_pwm(digital_output.z, -YAW_MAX, YAW_MAX, SERVO_MIN, SERVO_MAX);
-            if (error_type != ERROR_TYPE::PILOT_ERROR_AXIS)
-                analog_output.throttle = digital_to_pwm(digital_output.throttle, THROTTLE_MIN, THROTTLE_MAX, PWM_MIN, PWM_MAX);
-            else
-                analog_output.throttle = digital_to_pwm(AUTO_LAND_THROTTLE, THROTTLE_MIN, THROTTLE_MAX, PWM_MIN, PWM_MAX);
+            analog_output.x = digital_to_pwm(pilot_data.x, -ROLL_MAX, ROLL_MAX, SERVO_MIN, SERVO_MAX);
+            analog_output.y = digital_to_pwm(pilot_data.y, -PITCH_MAX, PITCH_MAX, SERVO_MIN, SERVO_MAX);
+            analog_output.z = digital_to_pwm(pilot_data.z, -YAW_MAX, YAW_MAX, SERVO_MIN, SERVO_MAX);
+            analog_output.throttle = digital_to_pwm(pilot_data.throttle, THROTTLE_MIN, THROTTLE_MAX, PWM_MIN, PWM_MAX);
         }
+        // Calcola la velocità lungo l'asse di movimento in avanti
+        double forward_speed = flight_data.forward_speed; // Supponendo che l'asse X rappresenti il movimento in avanti
+        // Determina il fattore di riduzione
+        double reduction_factor = 1.0;
+        if (abs(forward_speed) > FORWARD_SPEED_THRESHOLD)
+        {
+            reduction_factor = SERVO_REDUCTION_FACTOR +
+                               (1.0 - SERVO_REDUCTION_FACTOR) *
+                                   (FORWARD_SPEED_THRESHOLD / abs(forward_speed));
+        }
+        // Applica il fattore di riduzione e il segno usando std::copysign
+        analog_output.x = static_cast<int>(std::copysign(analog_output.x * reduction_factor, forward_speed));
+        analog_output.y = static_cast<int>(std::copysign(analog_output.y * reduction_factor, forward_speed));
+        analog_output.z = static_cast<int>(std::copysign(analog_output.z * reduction_factor, forward_speed));
+    }
+
+    if (!error.DATA_ERROR || state == STATE::DISARMED)
+    {
+        // Scrivi i valori sugli attuatori
+        servo_x.write(analog_output.x);
+        servo_y.write(analog_output.y);
+        servo_z.write(analog_output.z);
+        esc.write(analog_output.throttle);
     }
     else
     {
-        analog_output.x = digital_to_pwm(pilot_data.x, -ROLL_MAX, ROLL_MAX, SERVO_MIN, SERVO_MAX);
-        analog_output.y = digital_to_pwm(pilot_data.y, -PITCH_MAX, PITCH_MAX, SERVO_MIN, SERVO_MAX);
-        analog_output.z = digital_to_pwm(pilot_data.z, -YAW_MAX, YAW_MAX, SERVO_MIN, SERVO_MAX);
-        analog_output.throttle = digital_to_pwm(pilot_data.throttle, THROTTLE_MIN, THROTTLE_MAX, PWM_MIN, PWM_MAX);
+        // Vai a cercare il nastro per le riparazioni
+        servo_x.write(ITSRAININGMAN);
+        servo_y.write(HALLELUJAH);
+        servo_z.write(ITSRAININGMAN);
+        esc.write(HEYMAN);
     }
-
-    // Applica il fattore di riduzione e il segno usando std::copysign
-    analog_output.x = static_cast<int>(std::copysign(analog_output.x * reduction_factor, forward_speed));
-    analog_output.y = static_cast<int>(std::copysign(analog_output.y * reduction_factor, forward_speed));
-    analog_output.z = static_cast<int>(std::copysign(analog_output.z * reduction_factor, forward_speed));
-
-    // Scrivi i valori sugli attuatori
-    servo_x.write(analog_output.x);
-    servo_y.write(analog_output.y);
-    servo_z.write(analog_output.z);
-    esc.write(analog_output.throttle);
 }

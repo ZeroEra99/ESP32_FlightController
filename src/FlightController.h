@@ -30,6 +30,17 @@ class FlightController
 {
 private:
     /**
+     * @brief Calcola gli offset dinamici per il tuning dei PID.
+     *
+     * Questo metodo calcola gli offset dinamici per il tuning dei PID in base
+     * alla modalità operativa del controller e all'asse target per la calibrazione.
+     *
+     * @param assist_mode Tipo di assistenza attiva.
+     * @param controller_mode Modalità operativa del controller.
+     */
+    void compute_pid_offset(ASSIST_MODE assist_mode, CONTROLLER_MODE controller_mode, PilotData &pilot_data);
+
+    /**
      * @brief Calcola i dati di controllo in base alle modalità operative e all'input.
      *
      * Questo metodo elabora i dati di volo attuali, gli input del pilota e lo stato
@@ -45,7 +56,7 @@ private:
      * @param error Tipo di errore rilevato (se presente).
      * @param controller_mode Modalità operativa del controller (standard, tuning, ecc.).
      */
-    void compute_data(double dt, PilotData &pilot_data, FlightData &flight_data, DigitalOutput &digital_output, ASSIST_MODE assist_mode, STATE state, ERROR_TYPE error, CONTROLLER_MODE controller_mode);
+    void compute_data(double dt, PilotData &pilot_data, FlightData &flight_data, DigitalOutput &digital_output, ASSIST_MODE assist_mode, STATE state, Errors error, CONTROLLER_MODE controller_mode);
 
     // Componenti logiche
     PIDcontrol pid_attitude_x; ///< PID per il controllo dell'assetto sull'asse X (rollio).
@@ -55,12 +66,14 @@ private:
     PIDcontrol pid_gyro_y;     ///< PID per il controllo della velocità angolare sull'asse Y (beccheggio).
     PIDcontrol pid_gyro_z;     ///< PID per il controllo della velocità angolare sull'asse Z (imbardata).
 
-    // Dati di errore e stato
+    // Dati controller di volo
     Euler error_gyro;               ///< Errore delle velocità angolari per ciascun asse (X, Y, Z).
     Quaternion error_attitude;      ///< Errore di attitudine calcolato come differenza tra setpoint e attitudine attuale.
     Quaternion desired_attitude;    ///< Attitudine desiderata calcolata dagli input del pilota.
     PID pid_tuning_offset_gyro;     ///< Offset dinamici per il tuning del PID delle velocità angolari.
     PID pid_tuning_offset_attitude; ///< Offset dinamici per il tuning del PID degli assetti.
+
+    Errors error;
 
 public:
     /**

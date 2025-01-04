@@ -59,7 +59,7 @@ bool Receiver::decodeIBusPacket(const uint8_t *buffer)
  *
  * @return Struttura `PilotData` contenente i dati del pilota.
  */
-PilotDataAnalog Receiver::read()
+bool Receiver::read(PilotDataAnalog &pilot_data_analog)
 {
     static uint8_t buffer[32]; // Buffer per un pacchetto iBus
     if (serialPort.available() >= 32)
@@ -67,9 +67,9 @@ PilotDataAnalog Receiver::read()
         serialPort.readBytes(buffer, 32); // Legge 32 byte
         if (decodeIBusPacket(buffer))
         {
-            return data; // Ritorna i dati validi
+            pilot_data_analog = data; // Ritorna i dati validi
+            return true;              // Conferma la validità
         }
     }
-
-    return data; // Ritorna i dati precedenti se non valido
+    return false; // Nessun dato valido
 }

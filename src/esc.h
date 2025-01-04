@@ -48,7 +48,7 @@ public:
      *
      * @param value Il valore da inviare all'ESC (in microsecondi).
      */
-    void write(int value) override;
+    void write(int value);
 };
 
 #endif // ESC_H
