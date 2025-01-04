@@ -65,6 +65,9 @@ void loop()
     systemController.read_imu();      // Aggiorna i dati dall'IMU
     systemController.read_receiver(); // Aggiorna i dati dal ricevitore RC
 
+    // Verifica degli errori rilevati e aggiornamento dello stato del sistema
+    systemController.check_errors();
+
     // Aggiornamento delle modalità operative in base agli input ricevuti
     systemController.update_modes();
 

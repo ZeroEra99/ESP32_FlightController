@@ -41,6 +41,19 @@ private:
     void compute_pid_offset(ASSIST_MODE assist_mode, CONTROLLER_MODE controller_mode, PilotData &pilot_data);
 
     /**
+     * @brief Calcola l'attitudine desiderata dai dati di rollio, beccheggio e imbardata.
+     *
+     * Converte gli input di rollio, beccheggio e imbardata in quaternioni e li compone
+     * per ottenere l'attitudine desiderata.
+     *
+     * @param roll Valore del rollio.
+     * @param pitch Valore del beccheggio.
+     * @param yaw Valore dell'imbardata.
+     * @param result Quaternione risultante.
+     */
+    void compute_desired_attitude(float roll, float pitch, float yaw, Quaternion &result);
+
+    /**
      * @brief Calcola i dati di controllo in base alle modalità operative e all'input.
      *
      * Questo metodo elabora i dati di volo attuali, gli input del pilota e lo stato
@@ -57,6 +70,28 @@ private:
      * @param controller_mode Modalità operativa del controller (standard, tuning, ecc.).
      */
     void compute_data(double dt, PilotData &pilot_data, FlightData &flight_data, DigitalOutput &digital_output, ASSIST_MODE assist_mode, STATE state, Errors error, CONTROLLER_MODE controller_mode);
+
+    /**
+     * @brief Calcola il controllo PID per la modalità GYRO_STABILIZED.
+     *
+     * @param errors Errori per i tre assi (X, Y, Z).
+     * @param pid_offsets Offset PID per tuning dinamico.
+     * @param dt Intervallo di tempo dall'ultimo aggiornamento (in secondi).
+     * @param output Struttura in cui salvare gli output digitali.
+     */
+    void compute_gyro_pid(const Euler &errors, const PID &pid_offsets, double dt,
+                          DigitalOutput &output);
+
+    /**
+     * @brief Calcola il controllo PID per la modalità ATTITUDE_CONTROL.
+     *
+     * @param errors Quaternione di errore tra l'attitudine desiderata e quella attuale.
+     * @param pid_offsets Offset PID per tuning dinamico.
+     * @param dt Intervallo di tempo dall'ultimo aggiornamento (in secondi).
+     * @param output Struttura in cui salvare gli output digitali.
+     */
+    void compute_attitude_pid(const Quaternion &errors, const PID &pid_offsets, double dt,
+                              DigitalOutput &output);
 
     // Componenti logiche
     PIDcontrol pid_attitude_x; ///< PID per il controllo dell'assetto sull'asse X (rollio).

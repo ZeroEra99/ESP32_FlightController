@@ -119,4 +119,28 @@ void quaternion_from_axis_angle(float axis[3], float angle_deg, Quaternion &q);
  */
 void quaternion_normalize(Quaternion &q);
 
+/**
+ * @brief Compone una rotazione da più quaternioni.
+ *
+ * Moltiplica una serie di quaternioni in ordine per generare
+ * una rotazione composta.
+ *
+ * @param quaternions Array di quaternioni da moltiplicare.
+ * @param count Numero di quaternioni nell'array.
+ * @param result Quaternione risultante.
+ */
+void quaternion_compose(const Quaternion* quaternions, size_t count, Quaternion& result);
+
+/**
+ * @brief Calcola l'errore tra due quaternioni.
+ *
+ * Calcola l'errore come prodotto tra il quaternione desiderato
+ * e il coniugato del quaternione attuale.
+ *
+ * @param desired Quaternione desiderato.
+ * @param actual Quaternione attuale.
+ * @param error Quaternione risultante come errore.
+ */
+void quaternion_error(const Quaternion &desired, const Quaternion &actual, Quaternion &error);
+
 #endif // UTILS_H

@@ -46,6 +46,21 @@ private:
      */
     void stop();
 
+    /**
+     * @brief Verifica le condizioni per disarmare il sistema.
+     */
+    bool SystemController::check_disarm_conditions();
+
+    /**
+     * @brief Verifica le condizioni per armare il sistema.
+     */
+    bool SystemController::check_arm_conditions();
+
+    /**
+     * @brief Mappa i valori del ricevitore ai dati del pilota.
+     */
+    void SystemController::map_receiver_to_pilot_data();
+
     // Componenti fisiche
     ESC esc;           ///< Controlla il motore tramite segnali PWM.
     Motor servo_x;     ///< Servomotore per il controllo del rollio.

@@ -46,7 +46,8 @@ SystemController::SystemController() : esc(ESC_PIN, PWM_MIN, PWM_MAX),
 void SystemController::start()
 {
     DebugLogger::getInstance()->log("Starting flight controller.\n", LogLevel::INFO);
-    state = STATE::ARMED;
+    if (state != STATE::FAILSAFE && state != STATE::ARMED)
+        state = STATE::ARMED;
     DebugLogger::getInstance()->log("Flight controller started.\n", LogLevel::INFO);
 }
 
@@ -58,8 +59,40 @@ void SystemController::start()
 void SystemController::stop()
 {
     DebugLogger::getInstance()->log("Stopping flight controller.\n", LogLevel::INFO);
-    state = STATE::DISARMED;
+    if (state != STATE::DISARMED)
+        state = STATE::DISARMED;
     DebugLogger::getInstance()->log("Flight controller stopped.\n", LogLevel::INFO);
+}
+
+bool SystemController::check_disarm_conditions()
+{
+    return isInRange(receiver_data.z, PWM_MAX, PWM_MAX - PWM_MAX * ARM_TOLERANCE * 0.01) &&
+           isInRange(receiver_data.x, PWM_MIN, PWM_MIN + PWM_MAX * ARM_TOLERANCE * 0.01) &&
+           (state == STATE::ARMED);
+}
+
+bool SystemController::check_arm_conditions()
+{
+    return isInRange(receiver_data.z, PWM_MIN, PWM_MIN + PWM_MAX * ARM_TOLERANCE * 0.01) &&
+               isInRange(receiver_data.x, PWM_MAX, PWM_MAX - PWM_MAX * ARM_TOLERANCE * 0.01) &&
+               state == STATE::DISARMED ||
+           state == STATE::FAILSAFE;
+}
+
+void SystemController::map_receiver_to_pilot_data()
+{
+    pilot_data.x = pwm_to_digital(receiver_data.x, PWM_MIN, PWM_MAX, -ROLL_MAX, ROLL_MAX);
+    pilot_data.y = pwm_to_digital(receiver_data.y, PWM_MIN, PWM_MAX, -PITCH_MAX, PITCH_MAX);
+    pilot_data.throttle = pwm_to_digital(receiver_data.throttle, PWM_MIN, PWM_MAX, THROTTLE_MIN, THROTTLE_MAX);
+    pilot_data.z = pwm_to_digital(receiver_data.z, PWM_MIN, PWM_MAX, -YAW_MAX, YAW_MAX);
+
+    pilot_data.swa = map(receiver_data.swa, PWM_MIN, PWM_MAX, SWITCH_MIN, SWITCH_SW_ABC_MAX);
+    pilot_data.swb = map(receiver_data.swb, PWM_MIN, PWM_MAX, SWITCH_MIN, SWITCH_SW_ABC_MAX);
+    pilot_data.swc = map(receiver_data.swc, PWM_MIN, PWM_MAX, SWITCH_MIN, SWITCH_SW_ABC_MAX);
+    pilot_data.swd = map(receiver_data.swd, PWM_MIN, PWM_MAX, SWITCH_MIN, SWITCH_SW_D_MAX);
+
+    pilot_data.vra = pwm_to_digital(receiver_data.vra, PWM_MIN, PWM_MAX, VRA_MIN, VRA_MAX);
+    pilot_data.vrb = pwm_to_digital(receiver_data.vrb, PWM_MIN, PWM_MAX, VRB_MIN, VRB_MAX);
 }
 
 /**
@@ -90,42 +123,32 @@ void SystemController::read_imu()
  */
 void SystemController::read_receiver()
 {
+    // Legge i dati dal ricevitore e verifica eventuali errori
     if (!receiver.read(receiver_data))
     {
         error.PILOT_ERROR = true;
         return;
     }
     error.PILOT_ERROR = false;
+
+    // Verifica le condizioni per armare/disarmare il sistema
     if (isInRange(receiver_data.throttle, PWM_MIN, PWM_MIN + PWM_MAX * ARM_TOLERANCE * 0.01) &&
         isInRange(receiver_data.y, PWM_MIN, PWM_MIN + PWM_MAX * ARM_TOLERANCE * 0.01))
     {
-        if (isInRange(receiver_data.z, PWM_MAX, PWM_MAX - PWM_MAX * ARM_TOLERANCE * 0.01) &&
-            isInRange(receiver_data.x, PWM_MIN, PWM_MIN + PWM_MAX * ARM_TOLERANCE * 0.01) &&
-            (state == STATE::ARMED))
+        if (check_disarm_conditions())
         {
             stop();
         }
-        else if (isInRange(receiver_data.z, PWM_MIN, PWM_MIN + PWM_MAX * ARM_TOLERANCE * 0.01) &&
-                 isInRange(receiver_data.x, PWM_MAX, PWM_MAX - PWM_MAX * ARM_TOLERANCE * 0.01) &&
-                 state == STATE::DISARMED)
+        else if (check_arm_conditions())
         {
             start();
         }
     }
 
-    pilot_data.x = pwm_to_digital(receiver_data.x, PWM_MIN, PWM_MAX, -ROLL_MAX, ROLL_MAX);
-    pilot_data.y = pwm_to_digital(receiver_data.y, PWM_MIN, PWM_MAX, -PITCH_MAX, PITCH_MAX);
-    pilot_data.throttle = pwm_to_digital(receiver_data.throttle, PWM_MIN, PWM_MAX, THROTTLE_MIN, THROTTLE_MAX);
-    pilot_data.z = pwm_to_digital(receiver_data.z, PWM_MIN, PWM_MAX, -YAW_MAX, YAW_MAX);
-
-    pilot_data.swa = map(receiver_data.swa, PWM_MIN, PWM_MAX, SWITCH_MIN, SWITCH_SW_ABC_MAX);
-    pilot_data.swb = map(receiver_data.swb, PWM_MIN, PWM_MAX, SWITCH_MIN, SWITCH_SW_ABC_MAX);
-    pilot_data.swc = map(receiver_data.swc, PWM_MIN, PWM_MAX, SWITCH_MIN, SWITCH_SW_ABC_MAX);
-    pilot_data.swd = map(receiver_data.swd, PWM_MIN, PWM_MAX, SWITCH_MIN, SWITCH_SW_D_MAX);
-
-    pilot_data.vra = pwm_to_digital(receiver_data.vra, PWM_MIN, PWM_MAX, VRA_MIN, VRA_MAX);
-    pilot_data.vrb = pwm_to_digital(receiver_data.vrb, PWM_MIN, PWM_MAX, VRB_MIN, VRB_MAX);
+    // Mappa i valori del ricevitore ai dati del pilota
+    map_receiver_to_pilot_data();
 }
+
 #include "prayers.h"
 /**
  * @brief Aggiorna le modalità operative del sistema.
@@ -134,6 +157,8 @@ void SystemController::read_receiver()
  */
 void SystemController::update_modes()
 {
+    if (state == STATE::FAILSAFE)
+        return;
     struct AssistModeMapping
     {
         int swa;
@@ -199,31 +224,35 @@ void SystemController::check_errors()
     if (!error.IMU_ERROR && !error.PILOT_ERROR && state == STATE::FAILSAFE)
     {
         state = STATE::ARMED;
+        return;
     }
-    else
-    {
-        if (state != STATE::FAILSAFE)
-            state = STATE::FAILSAFE;
 
-        if(error.IMU_ERROR && error.PILOT_ERROR)
-        {
-            DebugLogger::getInstance()->log("IMU and pilot error detected.\n", LogLevel::ERROR);
-            STATE::DISARMED;
-        }
-        if (error.IMU_ERROR)
-        {
-            DebugLogger::getInstance()->log("IMU error detected.\n", LogLevel::ERROR);
-            if(assist_mode != ASSIST_MODE::MANUAL)
-                assist_mode = ASSIST_MODE::MANUAL;
-        }
-        else if (error.PILOT_ERROR)
-        {
-            DebugLogger::getInstance()->log("Pilot error detected.\n", LogLevel::ERROR);
-            if(assist_mode != ASSIST_MODE::ATTITUDE_CONTROL)
-                assist_mode = ASSIST_MODE::ATTITUDE_CONTROL;
-        }
+    if (state != STATE::FAILSAFE)
+    {
+        state = STATE::FAILSAFE;
+    }
+
+    if (error.IMU_ERROR && error.PILOT_ERROR)
+    {
+        DebugLogger::getInstance()->log("IMU and pilot error detected.\n", LogLevel::ERROR);
+        if (state != STATE::DISARMED)
+            state = STATE::DISARMED; // Correzione: assegna lo stato DISARMED
+    }
+
+    if (error.IMU_ERROR)
+    {
+        DebugLogger::getInstance()->log("IMU error detected.\n", LogLevel::ERROR);
+        if (assist_mode != ASSIST_MODE::MANUAL)
+            assist_mode = ASSIST_MODE::MANUAL; // Aggiorna sempre la modalità a MANUAL
+    }
+    else if (error.PILOT_ERROR)
+    {
+        DebugLogger::getInstance()->log("Pilot error detected.\n", LogLevel::ERROR);
+        if (assist_mode != ASSIST_MODE::ATTITUDE_CONTROL)
+            assist_mode = ASSIST_MODE::ATTITUDE_CONTROL; // Aggiorna sempre la modalità a ATTITUDE_CONTROL
     }
 }
+
 /**
  * @brief Aggiorna gli stati dei LED in base allo stato del sistema.
  *
