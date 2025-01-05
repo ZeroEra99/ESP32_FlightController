@@ -1,43 +1,48 @@
-/**
- * @file WiFiManager.cpp
- * @brief Implementazione della classe WiFiManager.
- *
- * Questa classe gestisce l'Access Point WiFi per il sistema, consentendo la creazione
- * di una rete wireless dedicata e l'accesso tramite un indirizzo IP locale.
- */
-
 #include "WiFiManager.h"
+#include "DebugLogger.h"
 
-/**
- * @brief Costruttore della classe WiFiManager.
- *
- * Inizializza l'oggetto WiFiManager con i dettagli della rete AP.
- *
- * @param ssid SSID della rete AP.
- * @param password Password della rete AP.
- */
-WiFiManager::WiFiManager(const char* ssid, const char* password) : ssid(ssid), password(password) {}
-
-/**
- * @brief Avvia l'Access Point.
- *
- * Configura e avvia l'Access Point WiFi utilizzando l'SSID e la password forniti.
- * Stampa l'indirizzo IP assegnato per consentire l'accesso alla rete.
- */
-void WiFiManager::startAccessPoint() {
-    WiFi.softAP(ssid, password);
-    Serial.println("Access Point avviato!");
-    Serial.print("Indirizzo IP: ");
-    Serial.println(WiFi.softAPIP());
+WiFiManager::WiFiManager(const char *ssid, const char *password) : ssid(ssid), password(password)
+{
+    // Inizializza il WiFi Manager
+    DebugLogger::getInstance()->log("WiFiManager initialized.", LogLevel::DEBUG);
 }
 
-/**
- * @brief Ottiene l'indirizzo IP dell'Access Point.
- *
- * Restituisce l'indirizzo IP assegnato all'Access Point sotto forma di stringa.
- *
- * @return Stringa con l'indirizzo IP dell'AP.
- */
-String WiFiManager::getLocalIP() {
+void WiFiManager::manageAccessPoint(bool enable)
+{
+    if (enable)
+    {
+        // Configura l'Access Point con un IP statico
+        IPAddress local_IP(192, 168, 1, 1);
+        IPAddress gateway(192, 168, 1, 1);
+        IPAddress subnet(255, 255, 255, 0);
+        WiFi.softAPConfig(local_IP, gateway, subnet);
+
+        // Avvia l'Access Point
+        if (!WiFi.softAP(ssid, password))
+        {
+            DebugLogger::getInstance()->log("Errore durante l'avvio dell'Access Point!", LogLevel::ERROR);
+            return;
+        }
+        DebugLogger::getInstance()->log("Access Point avviato!", LogLevel::INFO);
+        DebugLogger::getInstance()->log("Indirizzo IP: ", LogLevel::INFO);
+        DebugLogger::getInstance()->log(WiFi.softAPIP());
+
+        // Avvia il server HTTP per i log
+        DebugLogger::getInstance()->startServer();
+        DebugLogger::getInstance()->log("Server HTTP per i log avviato!", LogLevel::INFO);
+    }
+    else
+    {
+        // Disabilita l'Access Point e il server HTTP
+        DebugLogger::getInstance()->stopServer();
+        DebugLogger::getInstance()->log("Server HTTP per i log disattivato!", LogLevel::INFO);
+        WiFi.softAPdisconnect(true);
+        DebugLogger::getInstance()->log("Access Point disattivato!", LogLevel::INFO);
+    }
+}
+
+String WiFiManager::getLocalIP()
+{
+    // Ritorna l'indirizzo IP locale come stringa
     return WiFi.softAPIP().toString();
 }

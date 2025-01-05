@@ -1,59 +1,22 @@
-/**
- * @file ESC.cpp
- * @brief Implementazione della classe ESC.
- *
- * Questo file contiene l'implementazione delle funzioni della classe ESC,
- * utilizzata per controllare un controller elettronico di velocità (ESC).
- */
-
 #include "ESC.h"
+#include "DebugLogger.h"
 
-/**
- * @brief Costruttore della classe ESC.
- *
- * Inizializza un ESC associato a un determinato pin hardware e configura
- * i limiti minimo e massimo per il segnale PWM.
- *
- * @param pin Il pin hardware a cui l'ESC è collegato.
- * @param pwm_min Valore minimo del segnale PWM (in microsecondi).
- * @param pwm_max Valore massimo del segnale PWM (in microsecondi).
- */
-ESC::ESC(int pin, int pwm_min, int pwm_max) : Actuator(pin)
+ESC::ESC(int pin) : Actuator(pin)
 {
-    Serial.print("ESC ");
-    Serial.print(pin);
-    Serial.print(" setup starting.\n");
+    // Configurazione iniziale dell'ESC
+    DebugLogger::getInstance()->log("ESC ", LogLevel::DEBUG);
+    DebugLogger::getInstance()->log(pin, LogLevel::DEBUG);
+    DebugLogger::getInstance()->log(" setup starting.", LogLevel::DEBUG);
 
-    this->pwm_min = pwm_min; ///< Inizializza il limite minimo PWM
-    this->pwm_max = pwm_max; ///< Inizializza il limite massimo PWM
     esc.attach(pin);
-    esc.writeMicroseconds(pwm_min); ///< Imposta il segnale PWM al valore minimo iniziale
+    esc.writeMicroseconds(PWM_MIN); ///< Imposta il segnale PWM al valore minimo iniziale.
 
-    Serial.print("ESC ");
-    Serial.print(pin);
-    Serial.print(" setup complete.\n");
+    DebugLogger::getInstance()->log("ESC setup complete.", LogLevel::DEBUG);
 }
 
-/**
- * @brief Scrive un valore sull'ESC.
- *
- * Imposta il segnale PWM inviato all'ESC. Il valore deve essere compreso tra
- * `pwm_min` e `pwm_max` per garantire un funzionamento sicuro.
- *
- * @param value Il valore da inviare all'ESC (in microsecondi).
- */
-void ESC::write(int value)
+void ESC::write(double value)
 {
-    // Controllo dei limiti per garantire un segnale sicuro
-    if (value < pwm_min)
-    {
-        value = pwm_min;
-    }
-    else if (value > pwm_max)
-    {
-        value = pwm_max;
-    }
-
-    // Scrittura del valore sull'ESC
-    esc.writeMicroseconds(value);
+    // Converte il valore digitale in PWM e lo invia all'ESC
+    int analog = digital_to_pwm(value, THROTTLE_MIN, THROTTLE_MAX, PWM_MIN, PWM_MAX);
+    esc.writeMicroseconds(analog);
 }

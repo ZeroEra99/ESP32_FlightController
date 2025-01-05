@@ -1,86 +1,69 @@
 /**
- * @file main.cpp
- * @brief Programma principale per il controllo di volo.
- *
- * Questo file contiene il ciclo principale del programma e la configurazione iniziale.
- * Si occupa della configurazione dell'Access Point WiFi, dell'avvio del server HTTP
- * per il monitoraggio e la diagnostica, e dell'integrazione con il sistema di logging.
+ * @file ESP32_AircraftFlightController.ino
+ * @brief Programma principale per il controllo del volo dell'aereo basato su ESP32.
+ * 
+ * Questo file gestisce il ciclo principale del sistema, integrando letture dei sensori,
+ * controllo degli attuatori, logging e gestione dell'Access Point Wi-Fi.
  */
 
 #include <Arduino.h>
 #include "SystemController.h"
 #include "WiFiManager.h"
+#include "Aircraft.h"
 #include "DebugLogger.h"
 
-// Configurazione dell'Access Point
-const char *ssid = "ESP32_AP";     ///< Nome della rete WiFi (SSID) per l'Access Point.
-const char *password = "12345678"; ///< Password della rete WiFi per l'accesso all'Access Point.
+// Configurazione dell'Access Point Wi-Fi
+const char *ssid = "ESP32_AP";
 
-// Dichiarazioni
-WiFiManager wifiManager(ssid, password);          ///< Gestore dell'Access Point WiFi.
-SystemController systemController;                ///< Controller principale del sistema di volo.
-DebugLogger *logger = DebugLogger::getInstance(); ///< Logger per i messaggi di log.
+// Inizializzazione degli oggetti principali
+Aircraft aircraft;
+SystemController systemController;
+FlightController flightController(aircraft.receiver_data, aircraft.imu_data, aircraft.output);
+WiFiManager wifiManager(ssid, "password");
+DebugLogger *logger = DebugLogger::getInstance();
 
 static unsigned long tPrev = 0; ///< Timestamp dell'ultimo ciclo in millisecondi.
 
-/**
- * @brief Configurazione iniziale del sistema.
- *
- * In questa funzione viene configurata la comunicazione seriale per il debug,
- * avviato l'Access Point WiFi per la connessione al sistema e configurato il server
- * HTTP per il monitoraggio remoto. Inoltre, vengono registrati log iniziali per
- * confermare l'avvio corretto del sistema.
- */
 void setup()
 {
-    Serial.begin(115200); // Configurazione della porta seriale a 115200 baud
-
-    // Avvio dell'Access Point WiFi
-    wifiManager.startAccessPoint();
-
-    // Configurazione del server HTTP per il logging
-    logger->startServer();
+    Serial.begin(115200); // Configura la porta seriale a 115200 baud
 
     // Log iniziale per indicare l'avvio del sistema
     logger->log("Flight controller started.", LogLevel::INFO);
 }
 
-/**
- * @brief Ciclo principale del programma.
- *
- * Il ciclo principale si occupa di:
- * - Lettura dei dati dai sensori (IMU e ricevitore RC).
- * - Aggiornamento delle modalità operative.
- * - Esecuzione del controllo di volo tramite PID.
- * - Calcolo e invio degli output agli attuatori.
- * - Stampa e invio dei log tramite server HTTP per il monitoraggio remoto.
- */
 void loop()
 {
-    unsigned long t = millis();       // Timestamp attuale in millisecondi
-    double dt = (t - tPrev) / 1000.0; // Calcolo del tempo trascorso in secondi
+    unsigned long t = millis();       // Ottieni il timestamp attuale
+    double dt = (t - tPrev) / 1000.0; // Calcola l'intervallo di tempo in secondi
     tPrev = t;                        // Aggiorna il timestamp precedente
 
-    // Lettura dei dati dai sensori di bordo
-    systemController.read_imu();      // Aggiorna i dati dall'IMU
-    systemController.read_receiver(); // Aggiorna i dati dal ricevitore RC
+    // Lettura dei sensori di bordo
+    aircraft.read_imu(systemController.error);
+    aircraft.read_receiver(systemController.error);
 
-    // Verifica degli errori rilevati e aggiornamento dello stato del sistema
+    // Verifica degli errori e aggiornamento delle modalità operative
     systemController.check_errors();
+    systemController.update_modes(aircraft.receiver_data);
 
-    // Aggiornamento delle modalità operative in base agli input ricevuti
-    systemController.update_modes();
+    // Aggiorna lo stato dei LED in base alle modalità operative e agli errori
+    aircraft.update_leds(systemController.assist_mode, systemController.state, systemController.error);
 
-    // Aggiornamento degli stati dei LED in base allo stato del sistema
-    systemController.update_leds();
+    // Esegue il controllo di volo basato sui PID
+    flightController.control(dt, aircraft.imu_data, aircraft.receiver_data, aircraft.output,
+                             systemController.assist_mode, systemController.state, systemController.calibration_target);
 
-    // Esecuzione del controllo di volo (calcolo PID e logiche di stabilizzazione)
-    systemController.control(dt);
+    // Aggiorna gli attuatori con i valori calcolati
+    systemController.set_output(aircraft.output, aircraft.receiver_data);
+    aircraft.write_actuators();
 
-    // Calcolo e invio degli output agli attuatori
-    systemController.compute_output();
+    // Stampa i log per il monitoraggio remoto se il sistema è armato
+    if (systemController.state != CONTROLLER_STATE::DISARMED)
+        logger->printFormattedLogs();
 
-    // Stampa dei log formattati per il monitoraggio remoto
-    logger->printFormattedLogs();
+    // Gestisce l'Access Point in base allo stato del sistema
+    wifiManager.manageAccessPoint(systemController.state == CONTROLLER_STATE::DISARMED);
+
+    // Incrementa il contatore dei cicli di log
     logger->incrementCycleCount();
 }
