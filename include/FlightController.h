@@ -100,6 +100,13 @@ public:
     FlightController(ReceiverData &receiver_data, ImuData &imu_data, Output &output);
 
     /**
+     * @brief Salva i dati di output del controller.
+     * 
+     * @param output Dati di output del controller.
+     */
+    void logData(const Output &output);
+
+    /**
      * @brief Esegue il controllo del velivolo.
      * 
      * @param dt Intervallo di tempo dall'ultimo ciclo.

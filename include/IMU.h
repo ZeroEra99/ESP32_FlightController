@@ -3,7 +3,6 @@
  * @brief Dichiarazione della classe IMU per la gestione del sensore BNO055.
  */
 
-
 #ifndef IMU_H
 #define IMU_H
 
@@ -16,6 +15,7 @@
  */
 class IMU
 {
+private:
 public:
   /**
    * @brief Costruttore della classe IMU.
@@ -23,6 +23,13 @@ public:
    * Inizializza e configura il sensore BNO055.
    */
   IMU();
+
+  /**
+   * @brief Salva i dati letti dall'IMU.
+   *
+   * @param data Dati letti dall'IMU.
+   */
+  void logData(const ImuData &data);
 
   /**
    * @brief Legge i dati dall'IMU.

@@ -127,6 +127,52 @@ void FlightController::compute_attitude_pid(const Quaternion &errors, const PID 
     output.z = pid_attitude_z.pid(errors.z, dt, pid_offsets.kp, pid_offsets.ki, pid_offsets.kd);
 }
 
+void FlightController::logData(const Output &output)
+{
+    DebugLogger *logger = DebugLogger::getInstance();
+
+    // Output values (LogLevel::DATA)
+    logger->log("O_X", LogLevel::DATA, false);
+    logger->log(output.x, LogLevel::DATA, false);
+    logger->log("O_Y", LogLevel::DATA, false);
+    logger->log(output.y, LogLevel::DATA, false);
+    logger->log("O_Z", LogLevel::DATA, false);
+    logger->log(output.z, LogLevel::DATA, false);
+    logger->log("O_T", LogLevel::DATA, false);
+    logger->log(output.throttle, LogLevel::DATA, false);
+
+    // PID and error values (LogLevel::DATA_EXTRA)
+    logger->log("ErG_X", LogLevel::DATA_EXTRA, false);
+    logger->log(error_gyro.x, LogLevel::DATA_EXTRA, false);
+    logger->log("ErG_Y", LogLevel::DATA_EXTRA, false);
+    logger->log(error_gyro.y, LogLevel::DATA_EXTRA, false);
+    logger->log("ErG_Z", LogLevel::DATA_EXTRA, false);
+    logger->log(error_gyro.z, LogLevel::DATA_EXTRA, false);
+
+    logger->log("ErA_W", LogLevel::DATA_EXTRA, false);
+    logger->log(error_attitude.w, LogLevel::DATA_EXTRA, false);
+    logger->log("ErA_X", LogLevel::DATA_EXTRA, false);
+    logger->log(error_attitude.x, LogLevel::DATA_EXTRA, false);
+    logger->log("ErA_Y", LogLevel::DATA_EXTRA, false);
+    logger->log(error_attitude.y, LogLevel::DATA_EXTRA, false);
+    logger->log("ErA_Z", LogLevel::DATA_EXTRA, false);
+    logger->log(error_attitude.z, LogLevel::DATA_EXTRA, false);
+
+    logger->log("PIDG_X", LogLevel::DATA_EXTRA, false);
+    logger->log(pid_tuning_offset_gyro.kp, LogLevel::DATA_EXTRA, false);
+    logger->log("PIDG_Y", LogLevel::DATA_EXTRA, false);
+    logger->log(pid_tuning_offset_gyro.ki, LogLevel::DATA_EXTRA, false);
+    logger->log("PIDG_Z", LogLevel::DATA_EXTRA, false);
+    logger->log(pid_tuning_offset_gyro.kd, LogLevel::DATA_EXTRA, false);
+
+    logger->log("PIDA_X", LogLevel::DATA_EXTRA, false);
+    logger->log(pid_tuning_offset_attitude.kp, LogLevel::DATA_EXTRA, false);
+    logger->log("PIDA_Y", LogLevel::DATA_EXTRA, false);
+    logger->log(pid_tuning_offset_attitude.ki, LogLevel::DATA_EXTRA, false);
+    logger->log("PID_A_Z", LogLevel::DATA_EXTRA, false);
+    logger->log(pid_tuning_offset_attitude.kd, LogLevel::DATA_EXTRA, false);
+}
+
 void FlightController::control(double dt, ImuData &imu_data, ReceiverData &receiver_data,
                                Output &output, ASSIST_MODE assist_mode,
                                CONTROLLER_STATE state, CALIBRATION_TARGET calibration_target)

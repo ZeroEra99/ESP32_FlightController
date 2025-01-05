@@ -1,6 +1,7 @@
 #include "Receiver.h"
 #include "DebugLogger.h"
 #include "HardwareParameters.h"
+
 /**
  * @brief Struttura per contenere i dati RAW ricevuti dal protocollo iBus.
  */
@@ -54,6 +55,21 @@ bool Receiver::decodeIBusPacket(const uint8_t *buffer)
 
     return true;
 }
+
+void Receiver::logData(const ReceiverData &data)
+{
+    DebugLogger *logger = DebugLogger::getInstance();
+
+    logger->log("R_X", LogLevel::DATA, false);
+    logger->log(data.x, LogLevel::DATA, false);
+    logger->log("R_Y", LogLevel::DATA, false);
+    logger->log(data.y, LogLevel::DATA, false);
+    logger->log("R_Z", LogLevel::DATA, false);
+    logger->log(data.z, LogLevel::DATA, false);
+    logger->log("R_T", LogLevel::DATA, false);
+    logger->log(data.throttle, LogLevel::DATA, false);
+}
+
 
 bool Receiver::read(ReceiverData &data)
 {
