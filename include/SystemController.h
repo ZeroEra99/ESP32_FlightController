@@ -54,6 +54,10 @@ public:
     SystemController();
 
     /**
+     * @brief Avvia o ferma il sistema in base alle condizioni di armamento/disarmamento.
+     */
+    void update_state(ReceiverData &receiver_data);
+    /**
      * @brief Aggiorna le modalità operative del controller.
      * 
      * Aggiorna lo stato del sistema in base agli input ricevuti dal pilota.
@@ -82,7 +86,6 @@ public:
     ASSIST_MODE assist_mode;               ///< Modalità di assistenza corrente.
     CONTROLLER_MODE controller_mode;       ///< Modalità di controllo corrente.
     Errors error;                          ///< Tipo di errore rilevato.
-    Errors error_prev;                     ///< Tipo di errore rilevato al ciclo precedente.
     CALIBRATION_TARGET calibration_target; ///< Asse target per la calibrazione PID.
 };
 

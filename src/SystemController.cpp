@@ -21,7 +21,6 @@ SystemController::SystemController() : state(CONTROLLER_STATE::DISARMED),
 {
     // Inizializza gli stati del sistema
     error = {0};
-    error_prev = {0};
     DebugLogger::getInstance()->log("System controller initialized.", LogLevel::DEBUG);
 }
 
@@ -45,17 +44,40 @@ void SystemController::stop()
 bool SystemController::check_disarm_conditions(ReceiverData &receiver_data)
 {
     // Verifica se le condizioni per disarmare il sistema sono soddisfatte
-    return isInRange(receiver_data.z, PWM_MAX, PWM_MAX - PWM_MAX * ARM_TOLERANCE * 0.01) &&
-           isInRange(receiver_data.x, PWM_MIN, PWM_MIN + PWM_MAX * ARM_TOLERANCE * 0.01) &&
-           (state == CONTROLLER_STATE::ARMED || state == CONTROLLER_STATE::FAILSAFE);
+    return isInRange(receiver_data.z, YAW_MAX, YAW_MAX - YAW_MAX * ARM_TOLERANCE * 0.01) &&
+           isInRange(receiver_data.x, ROLL_MIN, ROLL_MIN + ROLL_MAX * ARM_TOLERANCE * 0.01) &&
+           (state == CONTROLLER_STATE::ARMED);
 }
 
 bool SystemController::check_arm_conditions(ReceiverData &receiver_data)
 {
     // Verifica se le condizioni per armare il sistema sono soddisfatte
-    return isInRange(receiver_data.z, PWM_MIN, PWM_MIN + PWM_MAX * ARM_TOLERANCE * 0.01) &&
-           isInRange(receiver_data.x, PWM_MAX, PWM_MAX - PWM_MAX * ARM_TOLERANCE * 0.01) &&
-           state == CONTROLLER_STATE::DISARMED;
+    return isInRange(receiver_data.z, YAW_MIN, YAW_MIN + YAW_MAX * ARM_TOLERANCE * 0.01) &&
+           isInRange(receiver_data.x, ROLL_MAX, ROLL_MAX - ROLL_MAX * ARM_TOLERANCE * 0.01) &&
+           (state == CONTROLLER_STATE::DISARMED || state == CONTROLLER_STATE::FAILSAFE);
+}
+
+void SystemController::update_state(ReceiverData &receiver_data)
+{
+    // Aggiorna lo stato del sistema in base alle condizioni di armamento e disarmo
+    if ((receiver_data.throttle > THROTTLE_MIN && receiver_data.throttle < THROTTLE_MIN + THROTTLE_MAX * ARM_TOLERANCE * 0.01) &&
+        receiver_data.y > PITCH_MIN && receiver_data.y < PITCH_MIN + PITCH_MAX * ARM_TOLERANCE * 0.01)
+    {
+        if (check_disarm_conditions(receiver_data))
+        {
+            stop();
+            return;
+        }
+
+        if (check_arm_conditions(receiver_data))
+        {
+            if (state == CONTROLLER_STATE::DISARMED)
+                start();
+            else if (state == CONTROLLER_STATE::FAILSAFE)
+                stop();
+            return;
+        }
+    }
 }
 
 void SystemController::update_modes(ReceiverData &receiver_data)
@@ -120,6 +142,7 @@ void SystemController::update_modes(ReceiverData &receiver_data)
 
 void SystemController::check_errors()
 {
+    static Errors error_prev = {0}; //< Tipo di errore rilevato al ciclo precedente.
     // Gestisce gli errori rilevati nel sistema
     if (error.IMU_ERROR == error_prev.IMU_ERROR && error.RECEIVER_ERROR == error_prev.RECEIVER_ERROR)
         return;
