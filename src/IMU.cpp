@@ -1,11 +1,11 @@
 #include "IMU.h"
-#include "DebugLogger.h"
+//#include "DebugLogger.h"
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BNO055.h>
 #include <Arduino.h>
 
 // Inizializzazione dell'oggetto sensore BNO055
-Adafruit_BNO055 bno055 = Adafruit_BNO055(55, 0x29);
+Adafruit_BNO055 bno055 = Adafruit_BNO055(55, 0x28, &Wire);
 
 uint16_t BNO055_SAMPLERATE_DELAY_MS = 10;                                          ///< Frequenza di campionamento in millisecondi.
 const double ACCEL_VEL_TRANSITION = (double)(BNO055_SAMPLERATE_DELAY_MS) / 1000.0; ///< Fattore per velocità da accelerazione.
@@ -14,18 +14,23 @@ const double DEG_2_RAD = 0.01745329251; ///< Conversione da gradi a radianti.
 
 IMU::IMU()
 {
-    DebugLogger::getInstance()->log("IMU setup starting.", LogLevel::DEBUG);
+    Serial.println("IMU setup starting.");
+    //DebugLogger::getInstance()->log("IMU setup starting.", LogLevel::DEBUG);
     if (!bno055.begin())
     {
-        DebugLogger::getInstance()->log("IMU setup failed!", LogLevel::ERROR);
-        while (1)
+        Serial.println("IMU setup failed!");
+        //DebugLogger::getInstance()->log("IMU setup failed!", LogLevel::ERROR);
+        //while (1)
             ; // Entra in loop infinito se l'inizializzazione fallisce.
     }
-    DebugLogger::getInstance()->log("IMU setup complete.", LogLevel::DEBUG);
+    bno055.setExtCrystalUse(true);
+    Serial.println("IMU setup complete.");
+    //DebugLogger::getInstance()->log("IMU setup complete.", LogLevel::DEBUG);
 }
 
 void IMU::logData(const ImuData &data)
 {
+    /*
     DebugLogger *logger = DebugLogger::getInstance();
 
     // Gyroscope
@@ -56,7 +61,7 @@ void IMU::logData(const ImuData &data)
 
     // Linear velocity
     logger->log("V", LogLevel::DATA, false);
-    logger->log(data.vel, LogLevel::DATA, false);
+    logger->log(data.vel, LogLevel::DATA, false);*/
 }
 
 bool IMU::read(ImuData &data)

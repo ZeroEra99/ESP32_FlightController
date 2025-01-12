@@ -1,6 +1,7 @@
 #include "FlightController.h"
 #include "Quaternions.h"
-#include "DebugLogger.h"
+#include <Arduino.h>
+//#include "DebugLogger.h"
 
 FlightController::FlightController(ReceiverData &receiver_data, ImuData &imu_data, Output &output)
     : pid_attitude_x(KP_ATTITUDE_X, KI_ATTITUDE_X, KD_ATTITUDE_X, MAX_INTEGRAL_ATTITUDE),
@@ -17,7 +18,8 @@ FlightController::FlightController(ReceiverData &receiver_data, ImuData &imu_dat
     pid_tuning_offset_gyro = {0, 0, 0, 0};
     pid_tuning_offset_attitude = {0, 0, 0, 0};
     error = {0};
-    DebugLogger::getInstance()->log("Flight controller initialized.", LogLevel::DEBUG);
+    Serial.println("Flight controller initialized.");
+    //DebugLogger::getInstance()->log("Flight controller initialized.", LogLevel::DEBUG);
 }
 
 void FlightController::compute_pid_offset(ASSIST_MODE assist_mode, CONTROLLER_MODE controller_mode, ReceiverData &receiver_data)
@@ -40,19 +42,19 @@ void FlightController::compute_pid_offset(ASSIST_MODE assist_mode, CONTROLLER_MO
         if (target_pid->kp == receiver_data.swb)
             return;
         target_pid->kp = receiver_data.swb;
-        DebugLogger::getInstance()->log("Kp updated", LogLevel::DEBUG);
+        //DebugLogger::getInstance()->log("Kp updated", LogLevel::DEBUG);
         break;
     case CONTROLLER_MODE::KI_CALIBRATION:
         if (target_pid->ki == receiver_data.swb)
             return;
         target_pid->ki = receiver_data.swb;
-        DebugLogger::getInstance()->log("Ki updated", LogLevel::DEBUG);
+        //DebugLogger::getInstance()->log("Ki updated", LogLevel::DEBUG);
         break;
     case CONTROLLER_MODE::KD_CALIBRATION:
         if (target_pid->kd == receiver_data.swb)
             return;
         target_pid->kd = receiver_data.swb;
-        DebugLogger::getInstance()->log("Kd updated", LogLevel::DEBUG);
+        //DebugLogger::getInstance()->log("Kd updated", LogLevel::DEBUG);
         break;
     default:
         break;
@@ -128,7 +130,7 @@ void FlightController::compute_attitude_pid(const Quaternion &errors, const PID 
 }
 
 void FlightController::logData(const Output &output)
-{
+{/*
     DebugLogger *logger = DebugLogger::getInstance();
 
     // Output values (LogLevel::DATA)
@@ -171,6 +173,7 @@ void FlightController::logData(const Output &output)
     logger->log(pid_tuning_offset_attitude.ki, LogLevel::DATA_EXTRA, false);
     logger->log("PID_A_Z", LogLevel::DATA_EXTRA, false);
     logger->log(pid_tuning_offset_attitude.kd, LogLevel::DATA_EXTRA, false);
+*/
 }
 
 void FlightController::control(double dt, ImuData &imu_data, ReceiverData &receiver_data,

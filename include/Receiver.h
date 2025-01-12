@@ -20,7 +20,14 @@
 class Receiver
 {
 private:
-    HardwareSerial &serialPort; ///< Porta seriale utilizzata per la comunicazione iBus.
+    /**
+     * @brief Verifica la presenza di dati sulla porta seriale.
+     * 
+     * @param timeout Timeout massimo per la verifica.
+     * @return true Se sono presenti dati sulla porta seriale.
+     * @return false Se non sono presenti dati sulla porta seriale.
+     */
+    bool check_receiver(unsigned long timeout);
 
     /**
      * @brief Decodifica un pacchetto ricevuto dal protocollo iBus.
@@ -35,9 +42,9 @@ public:
     /**
      * @brief Costruttore della classe Receiver.
      *
-     * @param serial Riferimento alla porta seriale da utilizzare per il protocollo iBus.
+     * @param rxPin Pin RX da utilizzare per il protocollo iBus.
      */
-    Receiver(HardwareSerial &serial);
+    Receiver(int rxPin);
 
     /**
      * @brief Salva i dati ricevuti dal pilota.

@@ -1,12 +1,14 @@
 #include "PIDcontrol.h"
-#include "DebugLogger.h"
+//#include "DebugLogger.h"
+#include <Arduino.h>
 
 PIDcontrol::PIDcontrol(double kp, double ki, double kd, double maxIntegral) : kp(kp), ki(ki), kd(kd), maxIntegral(maxIntegral)
 {
     // Inizializza i parametri del PID
     integral = 0;  ///< Inizializza il valore integrale accumulato.
     lastError = 0; ///< Inizializza l'ultimo errore registrato.
-    DebugLogger::getInstance()->log("PID controller initialized.", LogLevel::DEBUG);
+    //DebugLogger::getInstance()->log("PID controller initialized.", LogLevel::DEBUG);
+    Serial.println("PID controller initialized.");
 }
 
 double PIDcontrol::pid(double error, double dt, double kp_offset, double ki_offset, double kd_offset)

@@ -2,14 +2,13 @@
 #include "pins.h"
 
 // Configura la porta seriale per il ricevitore
-static HardwareSerial serialPort = IBUS_RX_PIN;
 
 Aircraft::Aircraft() : esc(ESC_PIN),
                        servo_x(SERVO_PIN_X),
                        servo_y(SERVO_PIN_Y),
                        servo_z(SERVO_PIN_Z),
-                       receiver(serialPort),
                        bno055(),
+                       receiver(IBUS_RX_PIN),
                        led_red(LED_PIN_RED),
                        led_green(LED_PIN_GREEN),
                        led_rgb(LED_PIN_RGB_RED, LED_PIN_RGB_GREEN, LED_PIN_RGB_BLUE)
@@ -18,6 +17,7 @@ Aircraft::Aircraft() : esc(ESC_PIN),
     imu_data = {0};
     receiver_data = {0};
     output = {0};
+    Serial.println("Aircraft initialized");
 }
 
 void Aircraft::read_imu(Errors &error)

@@ -15,7 +15,7 @@
 /** @defgroup Pin_Definitions Pin Definiti
  *  @{
  */
-#define IBUS_RX_PIN 16 ///< Pin RX per il protocollo iBus.
+#define IBUS_RX_PIN 18 ///< Pin RX per il protocollo iBus.
 
 #define ESC_PIN 13 ///< Pin per il controller elettronico ESC.
 

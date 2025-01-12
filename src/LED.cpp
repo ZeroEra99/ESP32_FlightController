@@ -1,25 +1,31 @@
 #include "LED.h"
-#include "DebugLogger.h"
+//#include "DebugLogger.h"
 
 LED::LED(int pin) : Actuator(pin)
 {
+    Serial.println("Light setup starting.");
+/*
     this->pin_red = 0;
     this->pin_green = 0;
     this->pin_blue = 0;
 
+/*
     DebugLogger::getInstance()->log("Light ", LogLevel::DEBUG);
     DebugLogger::getInstance()->log(pin, LogLevel::DEBUG);
     DebugLogger::getInstance()->log(" setup starting.", LogLevel::DEBUG);
 
+    
     this->pin = pin;
     this->blink_on = 0;
     this->blink_off = 0;
     state = LED_STATE::OFF;
     color = {};
     pinMode(pin, OUTPUT);
-    digitalWrite(pin, LOW);
+    ledcWrite(pin, LOW);
+*/
+    Serial.println("Light setup complete.");
 
-    DebugLogger::getInstance()->log("Light setup complete.", LogLevel::DEBUG);
+    //DebugLogger::getInstance()->log("Light setup complete.", LogLevel::DEBUG);
 }
 
 LED::LED(int pin_red, int pin_green, int pin_blue) : Actuator(pin)
@@ -27,7 +33,7 @@ LED::LED(int pin_red, int pin_green, int pin_blue) : Actuator(pin)
     // Configurazione di un LED RGB
     this->pin = 0;
 
-    DebugLogger::getInstance()->log("RGB Light setup starting.", LogLevel::DEBUG);
+    //DebugLogger::getInstance()->log("RGB Light setup starting.", LogLevel::DEBUG);
     this->pin_red = pin_red;
     this->pin_green = pin_green;
     this->pin_blue = pin_blue;
@@ -38,11 +44,11 @@ LED::LED(int pin_red, int pin_green, int pin_blue) : Actuator(pin)
     pinMode(pin_red, OUTPUT);
     pinMode(pin_green, OUTPUT);
     pinMode(pin_blue, OUTPUT);
-    digitalWrite(pin_red, LOW);
-    digitalWrite(pin_green, LOW);
-    digitalWrite(pin_blue, LOW);
+    ledcWrite(pin_red, LOW);
+    ledcWrite(pin_green, LOW);
+    ledcWrite(pin_blue, LOW);
 
-    DebugLogger::getInstance()->log("RGB Light setup complete.", LogLevel::DEBUG);
+    //DebugLogger::getInstance()->log("RGB Light setup complete.", LogLevel::DEBUG);
 }
 
 void LED::set_state(LED_STATE state)
