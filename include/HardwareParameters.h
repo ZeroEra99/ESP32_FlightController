@@ -34,8 +34,8 @@
  *  @{
  */
 #define SWITCH_MIN 0           ///< Valore minimo per gli switch.
-#define SWITCH_SW_ABC_MAX 2    ///< Valore massimo per gli switch A, B e C.
-#define SWITCH_SW_D_MAX 3      ///< Valore massimo per lo switch D.
+#define SWITCH_SW_ABD_MAX 1    ///< Valore massimo per gli switch A, B e C.
+#define SWITCH_SW_C_MAX 2      ///< Valore massimo per lo switch D.
 /** @} */
 
 /** @defgroup Potentiometer_Ranges Intervalli Potenziometri
@@ -75,8 +75,8 @@
 /** @defgroup LED_Timings Tempi LED
  *  @{
  */
-#define BLINK_ON 500  ///< Durata ON del lampeggio LED (millisecondi).
-#define BLINK_OFF 500 ///< Durata OFF del lampeggio LED (millisecondi).
+#define BLINK_ON 1000  ///< Durata ON del lampeggio LED (millisecondi).
+#define BLINK_OFF 1000 ///< Durata OFF del lampeggio LED (millisecondi).
 /** @} */
 
 #endif // HARDWARE_PARAMETERS_H
