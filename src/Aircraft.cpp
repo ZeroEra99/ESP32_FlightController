@@ -29,22 +29,22 @@ void Aircraft::read_imu(Errors &error)
     bool imu_error = !imu.read(imu_data);
 
     if (error.IMU_ERROR != imu_error)
-    {
         error.IMU_ERROR = imu_error;
-        error.IMU_ERROR ? Logger::getInstance().log(LogLevel::ERROR, "IMU error detected.") : Logger::getInstance().log(LogLevel::INFO, "IMU error resolved.");
-    }
 
     if (!imu_error)
         imu.logData(imu_data);
 }
 
-void Aircraft::read_receiver(Errors &error, CONTROLLER_STATE state)
+void Aircraft::read_receiver(Errors &error)
 {
     // Legge i dati dal ricevitore e rileva eventuali errori
-    error.RECEIVER_ERROR = !receiver.read(receiver_data);
+    bool receiver_error = !receiver.read(receiver_data);
+
+    if (error.RECEIVER_ERROR != receiver_error)
+        error.RECEIVER_ERROR = receiver_error;
 
     // Logga i dati ricevuti dal ricevitore
-    if (!error.RECEIVER_ERROR && state != CONTROLLER_STATE::DISARMED)
+    if (!receiver_error)
         receiver.logData(receiver_data);
 }
 

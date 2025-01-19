@@ -42,7 +42,7 @@ void loop()
         tPrev = t;                        // Aggiorna il timestamp precedente
         // put your main code here, to run repeatedly:
         aircraft->read_imu(controller.error);
-        aircraft->read_receiver(controller.error, controller.state);
+        aircraft->read_receiver(controller.error);
         controller.update_state(aircraft->receiver_data);
         controller.update_modes(aircraft->receiver_data, aircraft->imu.isSetupComplete);
         controller.check_errors();

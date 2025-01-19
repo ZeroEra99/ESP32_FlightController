@@ -1,4 +1,5 @@
 #include "WiFiManager.h"
+#include "Logger.h"
 #include <WiFiClient.h>
 
 WiFiManager &WiFiManager::getInstance()
@@ -10,13 +11,14 @@ WiFiManager &WiFiManager::getInstance()
 void WiFiManager::begin(const char *ssid, const char *password)
 {
     WiFi.begin(ssid, password);
-    Serial.print("Connessione al WiFi");
+    
+    Logger::getInstance().log(LogLevel::INFO, "Connecting to WiFi...");
     while (WiFi.status() != WL_CONNECTED)
     {
         delay(500);
         Serial.print(".");
     }
-    Serial.println("\nConnesso al WiFi!");
+    Logger::getInstance().log(LogLevel::INFO, "Connected to WiFi.");
 }
 
 bool WiFiManager::isConnected()
@@ -63,7 +65,7 @@ void WiFiManager::serverCheckTask(void *param)
             if (manager->serverStatus != true)
             {
                 manager->serverStatus = true;
-                Serial.println("Connessione con il server stabilita.");
+                Logger::getInstance().log(LogLevel::INFO, "Connection to server established.");
             }
         }
         else
@@ -71,7 +73,7 @@ void WiFiManager::serverCheckTask(void *param)
             if (manager->serverStatus != false)
             {
                 manager->serverStatus = false;
-                Serial.println("Connessione con il server assente.");
+                Logger::getInstance().log(LogLevel::INFO, "Connection to server lost.");
             }
         }
 

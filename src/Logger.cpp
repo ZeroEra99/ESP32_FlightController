@@ -27,7 +27,7 @@ void Logger::log(LogLevel level, const std::string &message)
     if (WiFiManager::getInstance().isServerActive()) {
         sendLogToServer(formattedLog);
     } else {
-        Serial.println("Server non raggiungibile, log non inviato.");
+        Serial.println("Server not active. Unable to send log.");
     }
 }
 
@@ -77,15 +77,13 @@ void Logger::sendLogToServer(const std::string &log)
         }
         else
         {
-            Serial.println("Error sending log.");
-            // Logger::getInstance()->log(LogLevel::ERROR, "Errore nell'invio del log."); Rompe tutto
+            Logger::log(LogLevel::ERROR, "Unable to send log to server.");
         }
 
         http.end();
     }
     else
     {
-        Serial.println("Wi-Fi not connected. Unable to send log.");
-        // Logger::getInstance()->log(LogLevel::ERROR, "Wi-Fi non connesso. Impossibile inviare il log."); Rompe tutto
+        Logger::log(LogLevel::ERROR, "Wi-Fi not connected. Unable to send log.");
     }
 }

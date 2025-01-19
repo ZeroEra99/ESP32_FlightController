@@ -53,7 +53,7 @@ public:
      * @param error Riferimento alla struttura degli errori per aggiornare lo stato del ricevitore.
      * @param state Stato attuale del controller per la gestione dei failsafe.
      */
-    void read_receiver(Errors &error, CONTROLLER_STATE state);
+    void read_receiver(Errors &error);
 
     /**
      * @brief Aggiorna lo stato dei LED in base allo stato del sistema.

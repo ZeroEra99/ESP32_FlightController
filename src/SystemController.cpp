@@ -88,7 +88,7 @@ void SystemController::check_errors()
         Logger::getInstance().log(LogLevel::WARNING, "Assist mode set -> Manual");
         failSafe();
     }
-    else if (error.RECEIVER_ERROR)
+    else if (error.RECEIVER_ERROR && state == CONTROLLER_STATE::ARMED)
     {
         Logger::getInstance().log(LogLevel::ERROR, "Receiver error detected.");
         assist_mode = ASSIST_MODE::ATTITUDE_CONTROL;
