@@ -21,12 +21,12 @@
 class Aircraft
 {
 private:
-    
+
+    ESC esc;                              ///< Controller elettronico per i motori.
+    ServoMotor servo_x, servo_y, servo_z; ///< Servomotori per il controllo delle superfici di controllo.
     Receiver receiver;                    ///< Ricevitore per i comandi del pilota.
     LED led_red, led_green;               ///< LED per il feedback visivo dello stato del sistema.
     RGB_LED led_rgb;                      ///< LED RGB per il feedback visivo dello stato del sistema.
-    ESC esc;                              ///< Controller elettronico per i motori.
-    ServoMotor servo_x, servo_y, servo_z; ///< Servomotori per il controllo delle superfici di controllo.
 
 public:
     /**

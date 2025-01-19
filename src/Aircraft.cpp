@@ -3,15 +3,16 @@
 #include "Logger.h"
 
 // Costruttore della classe Aircraft
-Aircraft::Aircraft() : imu(),
+Aircraft::Aircraft() : esc(ESC_PIN),
+                       servo_x(SERVO_PIN_X),
+                       servo_y(SERVO_PIN_Y),
+                       servo_z(SERVO_PIN_Z),
+                       imu(),
                        receiver(IBUS_RX_PIN),
                        led_red(LED_PIN_RED),
                        led_green(LED_PIN_GREEN),
-                       led_rgb(LED_PIN_RGB_RED, LED_PIN_RGB_GREEN, LED_PIN_RGB_BLUE),
-                       esc(ESC_PIN),
-                       servo_x(SERVO_PIN_X),
-                       servo_y(SERVO_PIN_Y),
-                       servo_z(SERVO_PIN_Z)
+                       led_rgb(LED_PIN_RGB_RED, LED_PIN_RGB_GREEN, LED_PIN_RGB_BLUE)
+
 {
     // Inizializza i dati del sistema
     receiver_data = {0};
