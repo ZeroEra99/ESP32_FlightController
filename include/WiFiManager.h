@@ -1,48 +1,31 @@
-/**
- * @file WiFiManager.h
- * @brief Dichiarazione della classe WiFiManager per la gestione dell'Access Point Wi-Fi.
- */
-
 #ifndef WIFI_MANAGER_H
 #define WIFI_MANAGER_H
 
 #include <WiFi.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 
-/**
- * @brief Classe per la gestione del Wi-Fi e dell'Access Point.
- * 
- * Consente di configurare e gestire un Access Point (AP) per il monitoraggio remoto.
- */
-class WiFiManager
-{
-private:
-    const char *ssid;     ///< SSID della rete AP.
-    const char *password; ///< Password della rete AP.
-
+class WiFiManager {
 public:
-    /**
-     * @brief Costruttore della classe WiFiManager.
-     * 
-     * Inizializza l'Access Point con i parametri forniti.
-     * 
-     * @param ssid SSID della rete AP.
-     * @param password Password della rete AP.
-     */
-    WiFiManager(const char *ssid, const char *password);
+    static WiFiManager &getInstance();
 
-    /**
-     * @brief Abilita o disabilita l'Access Point.
-     * 
-     * @param enable true per abilitare l'AP, false per disabilitarlo.
-     */
-    void manageAccessPoint(bool enable);
+    void begin(const char *ssid, const char *password);
+    bool isConnected();
+    bool isServerActive();
+    void startServerCheckTask(); // Avvia il task per il controllo del server
 
-    /**
-     * @brief Ottiene l'indirizzo IP locale dell'Access Point.
-     * 
-     * @return Indirizzo IP locale come stringa.
-     */
-    String getLocalIP();
+private:
+    WiFiManager() = default;
+    ~WiFiManager() = default;
+    WiFiManager(const WiFiManager &) = delete;
+    WiFiManager &operator=(const WiFiManager &) = delete;
+
+    static void serverCheckTask(void *param); // Task FreeRTOS per il controllo del server
+
+    bool serverStatus = false;
+    const char *serverAddress = "192.168.1.2";
+    uint16_t serverPort = 5000;
+    unsigned long checkInterval = 200; // Intervallo tra i controlli in ms
 };
 
 #endif // WIFI_MANAGER_H

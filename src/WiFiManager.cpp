@@ -1,51 +1,81 @@
 #include "WiFiManager.h"
-//#include "DebugLogger.h"
+#include <WiFiClient.h>
 
-WiFiManager::WiFiManager(const char *ssid, const char *password) : ssid(ssid), password(password)
+WiFiManager &WiFiManager::getInstance()
 {
-    // Inizializza il WiFi Manager
-    //DebugLogger::getInstance()->log("WiFiManager initialized.", LogLevel::DEBUG);
-    Serial.println("WiFiManager initialized.");
+    static WiFiManager instance;
+    return instance;
 }
 
-void WiFiManager::manageAccessPoint(bool enable)
+void WiFiManager::begin(const char *ssid, const char *password)
 {
-    if (enable)
+    WiFi.begin(ssid, password);
+    Serial.print("Connessione al WiFi");
+    while (WiFi.status() != WL_CONNECTED)
     {
-        // Configura l'Access Point con un IP statico
-        IPAddress local_IP(192, 168, 1, 1);
-        IPAddress gateway(192, 168, 1, 1);
-        IPAddress subnet(255, 255, 255, 0);
-        WiFi.softAPConfig(local_IP, gateway, subnet);
-
-        // Avvia l'Access Point
-        if (!WiFi.softAP(ssid, password))
-        {
-            //DebugLogger::getInstance()->log("Errore durante l'avvio dell'Access Point!", LogLevel::ERROR);
-            return;
-        }
-        /*
-        DebugLogger::getInstance()->log("Access Point avviato!", LogLevel::INFO);
-        DebugLogger::getInstance()->log("Indirizzo IP: ", LogLevel::INFO);
-        DebugLogger::getInstance()->log(WiFi.softAPIP());
-
-        // Avvia il server HTTP per i log
-        DebugLogger::getInstance()->startServer();
-        DebugLogger::getInstance()->log("Server HTTP per i log avviato!", LogLevel::INFO);
-        */
+        delay(500);
+        Serial.print(".");
     }
-    else
-    {/*
-        // Disabilita l'Access Point e il server HTTP
-        DebugLogger::getInstance()->stopServer();
-        DebugLogger::getInstance()->log("Server HTTP per i log disattivato!", LogLevel::INFO);*/
-        WiFi.softAPdisconnect(true);
-        //DebugLogger::getInstance()->log("Access Point disattivato!", LogLevel::INFO);
-    }
+    Serial.println("\nConnesso al WiFi!");
 }
 
-String WiFiManager::getLocalIP()
+bool WiFiManager::isConnected()
 {
-    // Ritorna l'indirizzo IP locale come stringa
-    return WiFi.softAPIP().toString();
+    return WiFi.status() == WL_CONNECTED;
+}
+
+bool WiFiManager::isServerActive()
+{
+    return serverStatus; // Restituisce lo stato aggiornato dal task
+}
+
+void WiFiManager::startServerCheckTask()
+{
+    xTaskCreatePinnedToCore(
+        serverCheckTask,   // Funzione del task
+        "ServerCheckTask", // Nome del task
+        4096,              // Stack size
+        this,              // Parametri passati al task
+        1,                 // Priorità
+        nullptr,           // Handle del task (non usato qui)
+        1                  // Core su cui eseguire il task
+    );
+}
+
+void WiFiManager::serverCheckTask(void *param)
+{
+    WiFiManager *manager = static_cast<WiFiManager *>(param);
+    WiFiClient client;
+
+    while (true)
+    {
+        if (!manager->isConnected())
+        {
+            manager->serverStatus = false;
+            vTaskDelay(manager->checkInterval / portTICK_PERIOD_MS);
+            continue;
+        }
+
+        // Prova a connettersi al server
+        if (client.connect(manager->serverAddress, manager->serverPort))
+        {
+            client.stop();
+            if (manager->serverStatus != true)
+            {
+                manager->serverStatus = true;
+                Serial.println("Connessione con il server stabilita.");
+            }
+        }
+        else
+        {
+            if (manager->serverStatus != false)
+            {
+                manager->serverStatus = false;
+                Serial.println("Connessione con il server assente.");
+            }
+        }
+
+        // Attende fino al prossimo controllo
+        vTaskDelay(manager->checkInterval / portTICK_PERIOD_MS);
+    }
 }

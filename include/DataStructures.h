@@ -169,7 +169,6 @@ struct Errors
 {
     bool RECEIVER_ERROR; ///< Errore sul pilota.
     bool IMU_ERROR;      ///< Errore sull'IMU.
-    bool DATA_ERROR;     ///< Errore sul controllore.
 };
 
 /** @} */
