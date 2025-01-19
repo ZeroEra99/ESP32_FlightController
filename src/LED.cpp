@@ -1,175 +1,203 @@
 #include "LED.h"
-//#include "DebugLogger.h"
+#include "Logger.h"
+#include <Arduino.h>
 
-LED::LED(int pin) : Actuator(pin)
+LED::LED(int pin)
 {
-    Serial.println("Light setup starting.");
-/*
-    this->pin_red = 0;
-    this->pin_green = 0;
-    this->pin_blue = 0;
-
-/*
-    DebugLogger::getInstance()->log("Light ", LogLevel::DEBUG);
-    DebugLogger::getInstance()->log(pin, LogLevel::DEBUG);
-    DebugLogger::getInstance()->log(" setup starting.", LogLevel::DEBUG);
-
-    
+    // Configurazione di un LED
     this->pin = pin;
     this->blink_on = 0;
     this->blink_off = 0;
     state = LED_STATE::OFF;
-    color = {};
+    // Inizializzazione del LED
     pinMode(pin, OUTPUT);
-    ledcWrite(pin, LOW);
-*/
-    Serial.println("Light setup complete.");
-
-    //DebugLogger::getInstance()->log("Light setup complete.", LogLevel::DEBUG);
+    digitalWrite(pin, HIGH);
+    delay(500);
+    digitalWrite(pin, LOW);
+    Logger::getInstance().log(LogLevel::INFO, "LED setup complete.");
 }
 
-LED::LED(int pin_red, int pin_green, int pin_blue) : Actuator(pin)
+void LED::set_state(LED_STATE state)
+{
+    // Se lo stato del LED è diverso da quello attuale, lo aggiorniamo
+    if (this->state != state)
+        this->state = state;
+}
+
+void LED::set_state(int blink_on, int blink_off)
+{
+    // Imposta il LED in modalità lampeggio
+    if (this->state != LED_STATE::BLINK)
+        this->state = LED_STATE::BLINK;
+    // Aggiorna i tempi di lampeggio
+    if (this->blink_on != blink_on)
+        this->blink_on = blink_on;
+    if (this->blink_off != blink_off)
+        this->blink_off = blink_off;
+}
+
+void LED::update()
+{
+    unsigned long currentMillis = millis(); // Tempo corrente
+
+    if (state == LED_STATE::OFF)
+    {
+        // Se il LED è spento, lo spegniamo
+        digitalWrite(pin, LOW);
+    }
+    else if (state == LED_STATE::ON)
+    {
+        // Se il LED è acceso, lo accendiamo
+        digitalWrite(pin, HIGH);
+    }
+    else if (state == LED_STATE::BLINK)
+    {
+        // Se il LED è in modalità lampeggio
+        static unsigned long previousMillis_simple = 0; // Variabile statica unica per il LED semplice
+        static bool ledState_simple = false;
+
+        // Alterna lo stato del LED in base al tempo
+        if (currentMillis - previousMillis_simple >= (ledState_simple ? blink_on : blink_off))
+        {
+            previousMillis_simple = currentMillis; // Aggiorna il tempo
+            ledState_simple = !ledState_simple;    // Cambia lo stato del LED
+
+            // Accende o spegne il LED a seconda dello stato
+            digitalWrite(pin, ledState_simple ? HIGH : LOW);
+        }
+    }
+}
+
+RGB_LED::RGB_LED(int pin_red, int pin_green, int pin_blue)
 {
     // Configurazione di un LED RGB
-    this->pin = 0;
-
-    //DebugLogger::getInstance()->log("RGB Light setup starting.", LogLevel::DEBUG);
     this->pin_red = pin_red;
     this->pin_green = pin_green;
     this->pin_blue = pin_blue;
     this->blink_on = 0;
     this->blink_off = 0;
     state = LED_STATE::OFF;
-    color = COLOR::NONE;
-    pinMode(pin_red, OUTPUT);
-    pinMode(pin_green, OUTPUT);
-    pinMode(pin_blue, OUTPUT);
-    ledcWrite(pin_red, LOW);
-    ledcWrite(pin_green, LOW);
-    ledcWrite(pin_blue, LOW);
+    color = {};
+    // Inizializzazione del LED RGB
+    ledcSetup(0, 5000, 8);
+    ledcSetup(1, 5000, 8);
+    ledcSetup(2, 5000, 8);
+    ledcAttachPin(pin_red, 0);
+    ledcAttachPin(pin_green, 1);
+    ledcAttachPin(pin_blue, 2);
 
-    //DebugLogger::getInstance()->log("RGB Light setup complete.", LogLevel::DEBUG);
+    ledcWrite(0, 255);
+    ledcWrite(1, 255);
+    ledcWrite(2, 255);
+
+    delay(500);
+
+    ledcWrite(0, 0);
+    ledcWrite(1, 0);
+    ledcWrite(2, 0);
+    Logger::getInstance().log(LogLevel::INFO, "RGB Light setup complete.");
 }
 
-void LED::set_state(LED_STATE state)
+void RGB_LED::set_state(LED_STATE state)
 {
-    // Imposta lo stato del LED (acceso/spento)
-    if (state == LED_STATE::BLINK || state == LED::state)
-        return;
-
-    LED::state = state;
+    // Se lo stato del LED RGB è diverso da quello attuale, lo aggiorniamo
+    if (state == LED_STATE::OFF && this->state != LED_STATE::OFF)
+        this->state = state;
 }
 
-void LED::set_state(LED_STATE state, COLOR color)
+void RGB_LED::set_state(LED_STATE state, COLOR color)
 {
-    // Imposta lo stato e il colore del LED
-    if (state == LED_STATE::BLINK || state == LED::state)
-        return;
-
-    LED::state = state;
-    LED::color = color;
+    // Imposta lo stato e il colore del LED RGB
+    if (this->state != state && state != LED_STATE::BLINK)
+        this->state = state;
+    if (this->color != color)
+        this->color = color;
 }
 
-void LED::set_state(int blink_on, int blink_off)
+void RGB_LED::set_state(int blink_on, int blink_off, COLOR color)
 {
-    // Imposta il LED in modalità lampeggio
-    LED::state = LED_STATE::BLINK;
-    LED::blink_on = blink_on;
-    LED::blink_off = blink_off;
+    // Imposta il LED RGB in modalità lampeggio
+    if (this->state != LED_STATE::BLINK)
+        this->state = LED_STATE::BLINK;
+    // Aggiorna i tempi di lampeggio e il colore
+    if (this->blink_on != blink_on)
+        this->blink_on = blink_on;
+    if (this->blink_off != blink_off)
+        this->blink_off = blink_off;
+    if (this->color != color)
+        this->color = color;
 }
 
-void LED::set_state(int blink_on, int blink_off, COLOR color)
-{
-    // Imposta il lampeggio e il colore del LED
-    LED::state = LED_STATE::BLINK;
-    LED::blink_on = blink_on;
-    LED::blink_off = blink_off;
-    LED::color = color;
-}
-
-void LED::write(bool on, COLOR color)
+void RGB_LED::write(bool on, COLOR color)
 {
     // Scrive lo stato e il colore del LED
-    if (!on)
-    {
-        if (color == COLOR::NONE)
-            analogWrite(LED::pin, LOW);
-        else
-        {
-            analogWrite(LED::pin_red, LOW);
-            analogWrite(LED::pin_green, LOW);
-            analogWrite(LED::pin_blue, LOW);
-        }
-        return;
-    }
+    int color_values[3] = {0, 0, 0}; // R, G, B
+
+    // Imposta il colore del LED RGB in base al colore selezionato
     switch (color)
     {
     case COLOR::RED:
-        analogWrite(LED::pin_red, 255);
-        analogWrite(LED::pin_green, 0);
-        analogWrite(LED::pin_blue, 0);
+        color_values[0] = 255;
         break;
     case COLOR::GREEN:
-        analogWrite(LED::pin_red, 0);
-        analogWrite(LED::pin_green, 255);
-        analogWrite(LED::pin_blue, 0);
+        color_values[1] = 255;
         break;
     case COLOR::BLUE:
-        analogWrite(LED::pin_red, 0);
-        analogWrite(LED::pin_green, 0);
-        analogWrite(LED::pin_blue, 255);
+        color_values[2] = 255;
         break;
     case COLOR::LIGHT_BLUE:
-        analogWrite(LED::pin_red, 170);
-        analogWrite(LED::pin_green, 170);
-        analogWrite(LED::pin_blue, 255);
+        color_values[0] = 170;
+        color_values[1] = 170;
+        color_values[2] = 255;
         break;
-
     case COLOR::PURPLE:
-        analogWrite(LED::pin_red, 170);
-        analogWrite(LED::pin_green, 0);
-        analogWrite(LED::pin_blue, 255);
+        color_values[0] = 170;
+        color_values[2] = 255;
         break;
     case COLOR::WHITE:
-        analogWrite(LED::pin_red, 255);
-        analogWrite(LED::pin_green, 255);
-        analogWrite(LED::pin_blue, 255);
+        color_values[0] = 255;
+        color_values[1] = 255;
+        color_values[2] = 255;
         break;
-    case COLOR::NONE:
-        analogWrite(LED::pin, HIGH);
     default:
         break;
     }
+    // Scrive i valori dei colori
+    ledcWrite(0, color_values[0]);
+    ledcWrite(1, color_values[1]);
+    ledcWrite(2, color_values[2]);
 }
 
-void LED::update()
+void RGB_LED::update()
 {
-    static unsigned long lastUpdate = 0; ///< Memorizza l'ultimo momento in cui il LED è stato aggiornato.
-    static bool isOn = false;            ///< Stato corrente del LED durante il lampeggio.
+    unsigned long currentMillis = millis(); // Tempo corrente
 
-    if (state != LED_STATE::BLINK)
+    if (state == LED_STATE::OFF)
     {
-        // Accensione o spegnimento diretto
-        write(state == LED_STATE::ON ? true : false, color);
-        return;
+        // Se il LED RGB è spento, spegniamo tutti i colori
+        ledcWrite(0, 0);
+        ledcWrite(1, 0);
+        ledcWrite(2, 0);
     }
-
-    // Lampeggio non bloccante
-    unsigned long currentMillis = millis();
-    unsigned long millisPassed = currentMillis - lastUpdate;
-
-    if (isOn && millisPassed >= (unsigned long)blink_on)
+    else if (state == LED_STATE::ON)
     {
-        // Spegne il LED dopo il tempo ON
-        write(false, color);
-        isOn = false;
-        lastUpdate = currentMillis;
-    }
-    else if (!isOn && millisPassed >= (unsigned long)blink_off)
-    {
-        // Accende il LED dopo il tempo OFF
+        // Se il LED RGB è acceso, scriviamo il colore attuale
         write(true, color);
-        isOn = true;
-        lastUpdate = currentMillis;
+    }
+    else if (state == LED_STATE::BLINK)
+    {
+        // Se il LED RGB è in modalità lampeggio
+        static unsigned long previousMillis_rgb = 0; // Variabile statica unica per il LED RGB
+        static bool ledState_rgb = false;
+
+        // Alterna lo stato del LED in base al tempo
+        if (currentMillis - previousMillis_rgb >= (ledState_rgb ? blink_on : blink_off))
+        {
+            previousMillis_rgb = currentMillis; // Aggiorna il tempo
+            ledState_rgb = !ledState_rgb;       // Cambia lo stato del LED
+
+            // Accende o spegne il LED a seconda dello stato
+            write(ledState_rgb, color);
+        }
     }
 }
