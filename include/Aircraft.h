@@ -9,9 +9,8 @@
 #include "DataStructures.h"
 #include "IMU.h"
 #include "Receiver.h"
-#include "esc.h"
-#include "ServoMotor.h"
 #include "LED.h"
+#include "Actuator.h"
 
 /**
  * @brief Classe principale per la gestione dell'aereo.
@@ -22,11 +21,12 @@
 class Aircraft
 {
 private:
-    ESC esc; ///< Controller elettronico per il motore principale.
-    ServoMotor servo_x, servo_y, servo_z; ///< Servocomandi per gli assi X, Y e Z.
-    IMU bno055;                           ///< Sensore IMU (BNO055) per il controllo dell'assetto.
-    Receiver receiver;               ///< Ricevitore per i comandi del pilota.
-    LED led_green, led_red, led_rgb; ///< LED per il feedback visivo dello stato del sistema.
+    IMU imu;
+    Receiver receiver;                    ///< Ricevitore per i comandi del pilota.
+    LED led_red, led_green;               ///< LED per il feedback visivo dello stato del sistema.
+    RGB_LED led_rgb;                      ///< LED RGB per il feedback visivo dello stato del sistema.
+    ESC esc;                              ///< Controller elettronico per i motori.
+    ServoMotor servo_x, servo_y, servo_z; ///< Servomotori per il controllo delle superfici di controllo.
 
 public:
     /**
@@ -51,17 +51,17 @@ public:
      * Aggiorna la struttura `ReceiverData` e rileva eventuali errori.
      *
      * @param error Riferimento alla struttura degli errori per aggiornare lo stato del ricevitore.
+     * @param state Stato attuale del controller per la gestione dei failsafe.
      */
-    void read_receiver(Errors &error);
+    void read_receiver(Errors &error, CONTROLLER_STATE state);
 
     /**
      * @brief Aggiorna lo stato dei LED in base allo stato del sistema.
      *
-     * @param assist_mode Modalità di assistenza corrente.
+     * @param assist_mode Modalità di assistenza attuale.
      * @param state Stato attuale del controller.
-     * @param error Riferimento alla struttura degli errori.
      */
-    void update_leds(ASSIST_MODE assist_mode, CONTROLLER_STATE state, Errors error);
+    void update_leds(ASSIST_MODE assist_mode, CONTROLLER_STATE state);
 
     /**
      * @brief Scrive i valori sugli attuatori.
@@ -72,7 +72,7 @@ public:
 
     ImuData imu_data;           ///< Dati letti dall'IMU.
     ReceiverData receiver_data; ///< Dati ricevuti dal pilota.
-    Output output;              ///< Output per gli attuatori.
+    Output output;              ///< Output per i servocomandi e l'ESC.
 };
 
 #endif // AIRCRAFT_H

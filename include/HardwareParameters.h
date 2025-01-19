@@ -69,7 +69,7 @@
 /** @defgroup Arm_Disarm_Parameters Parametri Arm/Disarm
  *  @{
  */
-#define ARM_TOLERANCE 10 ///< Tolleranza per il comando di arm/disarm.
+#define ARM_TOLERANCE 1 ///< Tolleranza per il comando di arm/disarm.
 /** @} */
 
 /** @defgroup LED_Timings Tempi LED

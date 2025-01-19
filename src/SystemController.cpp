@@ -1,6 +1,7 @@
 #include "SystemController.h"
-#include "DebugLogger.h"
+#include "Logger.h"
 #include "prayers.h"
+#include <Arduino.h>
 
 /**
  * @brief Funzione generica per verificare se un valore è in un intervallo.
@@ -20,26 +21,32 @@ SystemController::SystemController() : state(CONTROLLER_STATE::DISARMED),
                                        calibration_target(CALIBRATION_TARGET::X)
 {
     // Inizializza gli stati del sistema
-    error = {0};
-    //DebugLogger::getInstance()->log("System controller initialized.", LogLevel::DEBUG);
-    Serial.println("System controller initialized.");
+    error.IMU_ERROR = false;
+    error.RECEIVER_ERROR = false;
+    Logger::getInstance().log(LogLevel::INFO, "System controller initialized.");
 }
 
 void SystemController::start()
 {
     // Porta il sistema in stato armato
     state = CONTROLLER_STATE::ARMED;
-    //DebugLogger::getInstance()->log("Controller state set -> ARMED.", LogLevel::INFO);
+    Logger::getInstance().log(LogLevel::INFO, "Controller state set -> ARMED.");
 }
 
 void SystemController::stop()
 {
     // Porta il sistema in stato disarmato
     if (state == CONTROLLER_STATE::FAILSAFE)
-        DebugLogger::getInstance()->log("Failsafe mode forced release.", LogLevel::WARNING);
+        Logger::getInstance().log(LogLevel::WARNING, "Failsafe mode released.");
+    state = CONTROLLER_STATE::DISARMED;
+    Logger::getInstance().log(LogLevel::INFO, "Controller state set -> DISARMED.");
+}
 
-    //DebugLogger::getInstance()->log("ESC stopped.", LogLevel::INFO);
-    //DebugLogger::getInstance()->log("Controller state set -> DISARMED.", LogLevel::INFO);
+void SystemController::failSafe()
+{
+    // Porta il sistema in stato di failsafe
+    state = CONTROLLER_STATE::FAILSAFE;
+    Logger::getInstance().log(LogLevel::WARNING, "Controller state set -> FAILSAFE.");
 }
 
 bool SystemController::check_disarm_conditions(ReceiverData &receiver_data)
@@ -47,7 +54,7 @@ bool SystemController::check_disarm_conditions(ReceiverData &receiver_data)
     // Verifica se le condizioni per disarmare il sistema sono soddisfatte
     return isInRange(receiver_data.z, YAW_MAX, YAW_MAX - YAW_MAX * ARM_TOLERANCE * 0.01) &&
            isInRange(receiver_data.x, ROLL_MIN, ROLL_MIN + ROLL_MAX * ARM_TOLERANCE * 0.01) &&
-           (state == CONTROLLER_STATE::ARMED);
+           (state == CONTROLLER_STATE::ARMED || state == CONTROLLER_STATE::FAILSAFE);
 }
 
 bool SystemController::check_arm_conditions(ReceiverData &receiver_data)
@@ -55,14 +62,47 @@ bool SystemController::check_arm_conditions(ReceiverData &receiver_data)
     // Verifica se le condizioni per armare il sistema sono soddisfatte
     return isInRange(receiver_data.z, YAW_MIN, YAW_MIN + YAW_MAX * ARM_TOLERANCE * 0.01) &&
            isInRange(receiver_data.x, ROLL_MAX, ROLL_MAX - ROLL_MAX * ARM_TOLERANCE * 0.01) &&
-           (state == CONTROLLER_STATE::DISARMED || state == CONTROLLER_STATE::FAILSAFE);
+           (state == CONTROLLER_STATE::DISARMED);
+}
+
+Errors error_prev = {false, false};
+
+void SystemController::check_errors()
+{
+    // Gestisce gli errori rilevati nel sistema
+    if (error.IMU_ERROR == error_prev.IMU_ERROR && error.RECEIVER_ERROR == error_prev.RECEIVER_ERROR || state == CONTROLLER_STATE::DISARMED){
+        error_prev.IMU_ERROR = error.IMU_ERROR;
+        error_prev.RECEIVER_ERROR = error.RECEIVER_ERROR;
+        return;
+    }
+    else if (!error.IMU_ERROR && !error.RECEIVER_ERROR && state == CONTROLLER_STATE::FAILSAFE)
+    {
+        Logger::getInstance().log(LogLevel::WARNING, "Failsafe mode released.");
+        state = CONTROLLER_STATE::ARMED;
+    }
+    else if (error.IMU_ERROR)
+    {
+        Logger::getInstance().log(LogLevel::ERROR, "IMU error detected.");
+        assist_mode = ASSIST_MODE::MANUAL;
+        Logger::getInstance().log(LogLevel::WARNING, "Assist mode set -> Manual");
+        failSafe();
+    }
+    else if (error.RECEIVER_ERROR)
+    {
+        Logger::getInstance().log(LogLevel::ERROR, "Receiver error detected.");
+        assist_mode = ASSIST_MODE::ATTITUDE_CONTROL;
+        Logger::getInstance().log(LogLevel::WARNING, "Assist mode set -> Attitude control");
+        failSafe();
+    }
+    error_prev.IMU_ERROR = error.IMU_ERROR;
+    error_prev.RECEIVER_ERROR = error.RECEIVER_ERROR;
 }
 
 void SystemController::update_state(ReceiverData &receiver_data)
 {
     // Aggiorna lo stato del sistema in base alle condizioni di armamento e disarmo
-    if ((receiver_data.throttle > THROTTLE_MIN && receiver_data.throttle < THROTTLE_MIN + THROTTLE_MAX * ARM_TOLERANCE * 0.01) &&
-        receiver_data.y > PITCH_MIN && receiver_data.y < PITCH_MIN + PITCH_MAX * ARM_TOLERANCE * 0.01)
+    if ((receiver_data.throttle >= THROTTLE_MIN && receiver_data.throttle <= THROTTLE_MIN + THROTTLE_MAX * ARM_TOLERANCE * 0.01) &&
+        -receiver_data.y >= PITCH_MIN && -receiver_data.y <= PITCH_MIN + PITCH_MAX * ARM_TOLERANCE * 0.01)
     {
         if (check_disarm_conditions(receiver_data))
         {
@@ -72,10 +112,7 @@ void SystemController::update_state(ReceiverData &receiver_data)
 
         if (check_arm_conditions(receiver_data))
         {
-            if (state == CONTROLLER_STATE::DISARMED)
-                start();
-            else if (state == CONTROLLER_STATE::FAILSAFE)
-                stop();
+            start();
             return;
         }
     }
@@ -83,7 +120,6 @@ void SystemController::update_state(ReceiverData &receiver_data)
 
 void SystemController::update_modes(ReceiverData &receiver_data)
 {
-    // Aggiorna le modalità operative del sistema
     if (state == CONTROLLER_STATE::FAILSAFE)
         return;
 
@@ -123,7 +159,7 @@ void SystemController::update_modes(ReceiverData &receiver_data)
             assist_mode != mode.mode)
         {
             assist_mode = mode.mode;
-            //DebugLogger::getInstance()->log(mode.message, LogLevel::INFO);
+            Logger::getInstance().log(LogLevel::INFO, mode.message);
             break;
         }
     }
@@ -135,44 +171,12 @@ void SystemController::update_modes(ReceiverData &receiver_data)
             controller_mode != mode.mode)
         {
             controller_mode = mode.mode;
-            //DebugLogger::getInstance()->log(mode.message, LogLevel::INFO);
+            Logger::getInstance().log(LogLevel::INFO, mode.message);
             break;
         }
     }
 }
 
-void SystemController::check_errors()
-{
-    static Errors error_prev = {0}; //< Tipo di errore rilevato al ciclo precedente.
-    // Gestisce gli errori rilevati nel sistema
-    if (error.IMU_ERROR == error_prev.IMU_ERROR && error.RECEIVER_ERROR == error_prev.RECEIVER_ERROR)
-        return;
-
-    if (!error.IMU_ERROR && !error.RECEIVER_ERROR && state == CONTROLLER_STATE::FAILSAFE)
-    {
-        //DebugLogger::getInstance()->log("Failsafe mode released.", LogLevel::WARNING);
-        state = CONTROLLER_STATE::ARMED;
-        return;
-    }
-
-    if (state != CONTROLLER_STATE::FAILSAFE)
-    {
-        //DebugLogger::getInstance()->log("Failsafe mode set.", LogLevel::WARNING);
-        state = CONTROLLER_STATE::FAILSAFE;
-    }
-
-    if (error.IMU_ERROR)
-    {
-        //DebugLogger::getInstance()->log("IMU error detected.", LogLevel::ERROR);
-        assist_mode = ASSIST_MODE::MANUAL;
-    }
-    else if (error.RECEIVER_ERROR)
-    {
-        //DebugLogger::getInstance()->log("Pilot error detected.", LogLevel::ERROR);
-        assist_mode = ASSIST_MODE::ATTITUDE_CONTROL;
-    }
-    error_prev = error;
-}
 
 void SystemController::set_output(Output output, ReceiverData &receiver_data)
 {
