@@ -50,6 +50,6 @@ void loop()
         flightController->control(dt, aircraft->imu_data, aircraft->receiver_data, aircraft->output, controller.assist_mode, controller.state, controller.calibration_target);
         controller.set_output(aircraft->output, aircraft->receiver_data, aircraft->imu.isSetupComplete);
         aircraft->update_leds(controller.assist_mode, controller.state);
-        aircraft->write_actuators();
+        //aircraft->write_actuators();
     }
 }
