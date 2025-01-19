@@ -70,7 +70,8 @@ Errors error_prev = {false, false};
 void SystemController::check_errors()
 {
     // Gestisce gli errori rilevati nel sistema
-    if (error.IMU_ERROR == error_prev.IMU_ERROR && error.RECEIVER_ERROR == error_prev.RECEIVER_ERROR || state == CONTROLLER_STATE::DISARMED){
+    if (error.IMU_ERROR == error_prev.IMU_ERROR && error.RECEIVER_ERROR == error_prev.RECEIVER_ERROR || state == CONTROLLER_STATE::DISARMED)
+    {
         error_prev.IMU_ERROR = error.IMU_ERROR;
         error_prev.RECEIVER_ERROR = error.RECEIVER_ERROR;
         return;
@@ -118,10 +119,25 @@ void SystemController::update_state(ReceiverData &receiver_data)
     }
 }
 
-void SystemController::update_modes(ReceiverData &receiver_data)
+void SystemController::update_modes(ReceiverData &receiver_data, bool imuSetupComplete)
 {
     if (state == CONTROLLER_STATE::FAILSAFE)
         return;
+
+    if (state == CONTROLLER_STATE::ARMED && !imuSetupComplete)
+    {
+        if (assist_mode != ASSIST_MODE::MANUAL)
+        {
+            assist_mode = ASSIST_MODE::MANUAL;
+            Logger::getInstance().log(LogLevel::WARNING, "IMU not set up. Assist mode set -> Manual");
+        }
+        if (controller_mode != CONTROLLER_MODE::STANDARD)
+        {
+            controller_mode = CONTROLLER_MODE::STANDARD;
+            Logger::getInstance().log(LogLevel::WARNING, "IMU not set up. Controller mode set -> Standard");
+        }
+        return;
+    }
 
     struct AssistModeMapping
     {
@@ -177,8 +193,7 @@ void SystemController::update_modes(ReceiverData &receiver_data)
     }
 }
 
-
-void SystemController::set_output(Output output, ReceiverData &receiver_data)
+void SystemController::set_output(Output output, ReceiverData &receiver_data, bool imuSetupComplete)
 {
     // Aggiorna gli output in base allo stato del sistema
     if (state == CONTROLLER_STATE::DISARMED)
@@ -196,9 +211,10 @@ void SystemController::set_output(Output output, ReceiverData &receiver_data)
         output.z = receiver_data.z;
     }
 
-    if (error.IMU_ERROR && error.RECEIVER_ERROR)
+    if ((error.IMU_ERROR || !imuSetupComplete) && error.RECEIVER_ERROR)
     {
         output = {ITSRAININGMAN, HALLELUJAH, ITSRAININGMAN, HEYMAN};
+        Logger::getInstance().log(LogLevel::ERROR, "Critical error detected. System halted. Prayers sent.");
         return;
     }
 }

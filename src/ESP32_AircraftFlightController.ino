@@ -39,7 +39,7 @@ void loop()
         aircraft->read_imu(controller.error);
         aircraft->read_receiver(controller.error, controller.state);
         controller.update_state(aircraft->receiver_data);
-        controller.update_modes(aircraft->receiver_data);
+        controller.update_modes(aircraft->receiver_data, aircraft->imu.isSetupComplete);
         controller.check_errors();
         aircraft->update_leds(controller.assist_mode, controller.state);
     }

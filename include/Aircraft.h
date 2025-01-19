@@ -21,7 +21,7 @@
 class Aircraft
 {
 private:
-    IMU imu;
+    
     Receiver receiver;                    ///< Ricevitore per i comandi del pilota.
     LED led_red, led_green;               ///< LED per il feedback visivo dello stato del sistema.
     RGB_LED led_rgb;                      ///< LED RGB per il feedback visivo dello stato del sistema.
@@ -70,6 +70,7 @@ public:
      */
     void write_actuators();
 
+    IMU imu;
     ImuData imu_data;           ///< Dati letti dall'IMU.
     ReceiverData receiver_data; ///< Dati ricevuti dal pilota.
     Output output;              ///< Output per i servocomandi e l'ESC.
