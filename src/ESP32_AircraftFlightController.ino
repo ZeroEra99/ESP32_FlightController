@@ -46,6 +46,7 @@ void loop()
         controller.update_state(aircraft->receiver_data);
         controller.update_modes(aircraft->receiver_data, aircraft->imu.isSetupComplete);
         controller.check_errors();
+        flightController->compute_data(dt, aircraft->receiver_data, aircraft->imu_data, aircraft->output, controller.assist_mode, controller.state, controller.error, controller.controller_mode);
         flightController->control(dt, aircraft->imu_data, aircraft->receiver_data, aircraft->output, controller.assist_mode, controller.state, controller.calibration_target);
         controller.set_output(aircraft->output, aircraft->receiver_data, aircraft->imu.isSetupComplete);
         aircraft->update_leds(controller.assist_mode, controller.state);

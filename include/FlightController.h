@@ -39,20 +39,6 @@ private:
     void compute_desired_attitude(float roll, float pitch, float yaw, Quaternion &result);
 
     /**
-     * @brief Elabora i dati per la stabilizzazione del volo.
-     * 
-     * @param dt Intervallo di tempo dall'ultimo ciclo.
-     * @param receiver_data Dati ricevuti dal pilota.
-     * @param imu_data Dati letti dall'IMU.
-     * @param output Struttura di output per gli attuatori.
-     * @param assist_mode Modalità di assistenza corrente.
-     * @param state Stato del controller.
-     * @param error Errori attuali.
-     * @param controller_mode Modalità di controllo corrente.
-     */
-    void compute_data(double dt, ReceiverData &receiver_data, ImuData &imu_data, Output &output, ASSIST_MODE assist_mode, CONTROLLER_STATE state, Errors error, CONTROLLER_MODE controller_mode);
-
-    /**
      * @brief Calcola il controllo PID per le velocità angolari.
      * 
      * @param errors Errori angolari.
@@ -105,6 +91,20 @@ public:
      * @param output Dati di output del controller.
      */
     void logData(const Output &output);
+
+    /**
+     * @brief Elabora i dati per la stabilizzazione del volo.
+     * 
+     * @param dt Intervallo di tempo dall'ultimo ciclo.
+     * @param receiver_data Dati ricevuti dal pilota.
+     * @param imu_data Dati letti dall'IMU.
+     * @param output Struttura di output per gli attuatori.
+     * @param assist_mode Modalità di assistenza corrente.
+     * @param state Stato del controller.
+     * @param error Errori attuali.
+     * @param controller_mode Modalità di controllo corrente.
+     */
+    void compute_data(double dt, ReceiverData &receiver_data, ImuData &imu_data, Output &output, ASSIST_MODE assist_mode, CONTROLLER_STATE state, Errors error, CONTROLLER_MODE controller_mode);
 
     /**
      * @brief Esegue il controllo del velivolo.

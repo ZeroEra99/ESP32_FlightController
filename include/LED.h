@@ -29,7 +29,7 @@ public:
      *
      * @param pin Pin associato al LED.
      */
-    LED(int pin);
+    explicit LED(int pin);
 
     /**
      * @brief Imposta lo stato del LED.
@@ -80,7 +80,7 @@ public:
      * @param pin_green Pin per il canale verde del LED RGB.
      * @param pin_blue Pin per il canale blu del LED RGB.
      */
-    RGB_LED(int pin_red, int pin_green, int pin_blue);
+    explicit RGB_LED(int pin_red, int pin_green, int pin_blue);
 
     /**
      * @brief Imposta lo stato del LED RGB.

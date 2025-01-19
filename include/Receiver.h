@@ -67,7 +67,7 @@ public:
      *
      * @param rxPin Pin di ricezione del segnale IBUS.
      */
-    Receiver(int rxPin);
+    explicit Receiver(int rxPin);
 
     /**
      * @brief Legge i dati dal ricevitore IBUS.

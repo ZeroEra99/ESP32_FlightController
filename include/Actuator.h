@@ -26,7 +26,7 @@ public:
      * 
      * @param pin Pin associato all'ESC.
      */
-    ESC(int pin);
+    explicit ESC(int pin);
 
     /**
      * @brief Imposta il valore di controllo dell'ESC.
@@ -57,7 +57,7 @@ public:
      * 
      * @param pin Pin associato al servomotore.
      */
-    ServoMotor(int pin);
+    explicit ServoMotor(int pin);
 
     /**
      * @brief Imposta il valore di controllo del servomotore.
