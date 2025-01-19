@@ -1,5 +1,5 @@
 #include "IMU.h"
-//#include "DebugLogger.h"
+#include "Logger.h"
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BNO055.h>
 #include <Arduino.h>
@@ -15,53 +15,50 @@ const double DEG_2_RAD = 0.01745329251; ///< Conversione da gradi a radianti.
 IMU::IMU()
 {
     Serial.println("IMU setup starting.");
-    //DebugLogger::getInstance()->log("IMU setup starting.", LogLevel::DEBUG);
+    Logger::getInstance().log(LogLevel::INFO, "IMU setup starting.");
+
     if (!bno055.begin())
     {
-        Serial.println("IMU setup failed!");
-        //DebugLogger::getInstance()->log("IMU setup failed!", LogLevel::ERROR);
-        //while (1)
-            ; // Entra in loop infinito se l'inizializzazione fallisce.
+        Logger::getInstance().log(LogLevel::ERROR, "IMU setup failed!");
+
+        // while (1)
+        //; // Entra in loop infinito se l'inizializzazione fallisce.
+        Logger::getInstance().log(LogLevel::WARNING, "Continuing without IMU.");
+        return;
     }
     bno055.setExtCrystalUse(true);
-    Serial.println("IMU setup complete.");
-    //DebugLogger::getInstance()->log("IMU setup complete.", LogLevel::DEBUG);
+
+    isSetupComplete = true;
+    Logger::getInstance().log(LogLevel::INFO, "IMU setup complete.");
 }
 
 void IMU::logData(const ImuData &data)
 {
-    /*
-    DebugLogger *logger = DebugLogger::getInstance();
+    Serial.print("G_X: ");
+    Serial.print(data.gyro.x);
+    Serial.print(" G_Y: ");
+    Serial.print(data.gyro.y);
+    Serial.print(" G_Z: ");
+    Serial.print(data.gyro.z);
 
-    // Gyroscope
-    logger->log("G_X", LogLevel::DATA, false);
-    logger->log(data.gyro.x, LogLevel::DATA, false);
-    logger->log("G_Y", LogLevel::DATA, false);
-    logger->log(data.gyro.y, LogLevel::DATA, false);
-    logger->log("G_Z", LogLevel::DATA, false);
-    logger->log(data.gyro.z, LogLevel::DATA);
+    Serial.print(" Ac_X: ");
+    Serial.print(data.accel.x);
+    Serial.print(" Ac_Y: ");
+    Serial.print(data.accel.y);
+    Serial.print(" Ac_Z: ");
+    Serial.print(data.accel.z);
 
-    // Accelerometer
-    logger->log("Ac_X", LogLevel::DATA, false);
-    logger->log(data.accel.x, LogLevel::DATA, false);
-    logger->log("Ac_Y", LogLevel::DATA, false);
-    logger->log(data.accel.y, LogLevel::DATA, false);
-    logger->log("Ac_Z", LogLevel::DATA, false);
-    logger->log(data.accel.z, LogLevel::DATA, false);
+    Serial.print(" Q_W: ");
+    Serial.print(data.quat.w);
+    Serial.print(" Q_X: ");
+    Serial.print(data.quat.x);
+    Serial.print(" Q_Y: ");
+    Serial.print(data.quat.y);
+    Serial.print(" Q_Z: ");
+    Serial.print(data.quat.z);
 
-    // Quaternion
-    logger->log("Q_W", LogLevel::DATA, false);
-    logger->log(data.quat.w, LogLevel::DATA, false);
-    logger->log("Q_X", LogLevel::DATA, false);
-    logger->log(data.quat.x, LogLevel::DATA, false);
-    logger->log("Q_Y", LogLevel::DATA, false);
-    logger->log(data.quat.y, LogLevel::DATA, false);
-    logger->log("Q_Z", LogLevel::DATA, false);
-    logger->log(data.quat.z, LogLevel::DATA, false);
-
-    // Linear velocity
-    logger->log("V", LogLevel::DATA, false);
-    logger->log(data.vel, LogLevel::DATA, false);*/
+    Serial.print(" V: ");
+    Serial.println(data.vel);
 }
 
 bool IMU::read(ImuData &data)
