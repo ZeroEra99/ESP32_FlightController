@@ -1,9 +1,11 @@
 #include "Receiver.h"
+#include "Logger.h"
 
 Receiver::Receiver(int rxPin) : rxPin(rxPin), bufferIndex(0)
 {
     Serial1.begin(115200, SERIAL_8N1, rxPin, -1); // Configura UART solo per RX
     resetBuffer();
+    Logger::getInstance().log(LogLevel::INFO, "Receiver setup complete.");
 }
 
 void Receiver::resetBuffer()
@@ -31,7 +33,18 @@ bool Receiver::decodeIBusPacket()
     return true;
 }
 
-double Receiver::pwmToDigital(int pwm_value, int min_analog, int max_analog, double min_digital, double max_digital)
+/**
+ * @brief Converte un valore PWM in un valore normalizzato digitale.
+ * 
+ * @param pwm_value Valore PWM ricevuto.
+ * @param min_analog Valore minimo PWM.
+ * @param max_analog Valore massimo PWM.
+ * @param min_digital Valore minimo normalizzato.
+ * @param max_digital Valore massimo normalizzato.
+ * 
+ * @return double Valore normalizzato.
+ */
+double pwmToDigital(int pwm_value, int min_analog, int max_analog, double min_digital, double max_digital)
 {
     double digital_value = ((double)(pwm_value - min_analog) / (max_analog - min_analog)) * (max_digital - min_digital) + min_digital;
     return (digital_value < min_digital) ? min_digital : (digital_value > max_digital) ? max_digital
@@ -117,8 +130,6 @@ bool Receiver::read(ReceiverData &data)
 
 void Receiver::logData(const ReceiverData &data)
 {
-    Serial.print("\tCH1:\t");
-    Serial.print(data.x); 
      Serial.print(" CH2: ");
      Serial.print(data.y);
      Serial.print(" CH3: ");
