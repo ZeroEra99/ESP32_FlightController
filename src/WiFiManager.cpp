@@ -11,7 +11,7 @@ WiFiManager &WiFiManager::getInstance()
 void WiFiManager::begin(const char *ssid, const char *password)
 {
     WiFi.begin(ssid, password);
-    
+
     Logger::getInstance().log(LogLevel::INFO, "Connecting to WiFi...");
     while (WiFi.status() != WL_CONNECTED)
     {
@@ -19,6 +19,16 @@ void WiFiManager::begin(const char *ssid, const char *password)
         Serial.print(".");
     }
     Logger::getInstance().log(LogLevel::INFO, "Connected to WiFi.");
+
+    // Avvia mDNS per il client
+    if (!MDNS.begin("esp32-client"))
+    {
+        Logger::getInstance().log(LogLevel::ERROR, "Failed to start mDNS.");
+    }
+    else
+    {
+        Logger::getInstance().log(LogLevel::INFO, "mDNS responder started.");
+    }
 }
 
 bool WiFiManager::isConnected()
@@ -29,6 +39,24 @@ bool WiFiManager::isConnected()
 bool WiFiManager::isServerActive()
 {
     return serverStatus; // Restituisce lo stato aggiornato dal task
+}
+
+String WiFiManager::discoverServer()
+{
+    // Ricerca il server tramite mDNS
+    Logger::getInstance().log(LogLevel::INFO, "Discovering server via mDNS...");
+    IPAddress serverIP = MDNS.queryHost("ESP32Server");
+    if (serverIP)
+    {
+        serverAddress = serverIP.toString();
+        Logger::getInstance().log(LogLevel::INFO, "Server discovered.");
+        return serverAddress;
+    }
+    else
+    {
+        Logger::getInstance().log(LogLevel::WARNING, "Server not found via mDNS.");
+        return "";
+    }
 }
 
 void WiFiManager::startServerCheckTask()
@@ -58,8 +86,14 @@ void WiFiManager::serverCheckTask(void *param)
             continue;
         }
 
-        // Prova a connettersi al server
-        if (client.connect(manager->serverAddress, manager->serverPort))
+        // Se il server non è stato ancora scoperto, prova a scoprirlo
+        if (manager->serverAddress.isEmpty())
+        {
+            manager->discoverServer();
+        }
+
+        // Prova a connettersi al server (se l'indirizzo è valido)
+        if (!manager->serverAddress.isEmpty() && client.connect(manager->serverAddress.c_str(), manager->serverPort))
         {
             client.stop();
             if (manager->serverStatus != true)

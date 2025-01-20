@@ -2,6 +2,7 @@
 #define WIFI_MANAGER_H
 
 #include <WiFi.h>
+#include <ESPmDNS.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
@@ -13,6 +14,7 @@ public:
     bool isConnected();
     bool isServerActive();
     void startServerCheckTask(); // Avvia il task per il controllo del server
+    String discoverServer();     // Scopre automaticamente il server tramite mDNS
 
 private:
     WiFiManager() = default;
@@ -23,8 +25,8 @@ private:
     static void serverCheckTask(void *param); // Task FreeRTOS per il controllo del server
 
     bool serverStatus = false;
-    const char *serverAddress = "192.168.1.2";
-    uint16_t serverPort = 5000;
+    String serverAddress = "";  // Indirizzo del server scoperto dinamicamente
+    uint16_t serverPort = 5000; // Porta del server
     unsigned long checkInterval = 200; // Intervallo tra i controlli in ms
 };
 
