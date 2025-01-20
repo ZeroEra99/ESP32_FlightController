@@ -3,10 +3,10 @@
 #include "Logger.h"
 
 // Costruttore della classe Aircraft
-Aircraft::Aircraft() : esc(ESC_PIN, ESC_PWM_CHANNEL, ESC_PWM_FREQUENCY, ESC_PWM_RESOLUTION),
-                       servo_x(SERVO_PIN_X),
-                       servo_y(SERVO_PIN_Y),
-                       servo_z(SERVO_PIN_Z),
+Aircraft::Aircraft() : esc(ESC_PIN, ESC_PWM_CHANNEL),
+                       servo_x(SERVO_PIN_X, SERVO_X_PWM_CHANNEL),
+                       servo_y(SERVO_PIN_Y, SERVO_Y_PWM_CHANNEL),
+                       servo_z(SERVO_PIN_Z, SERVO_Z_PWM_CHANNEL),
                        imu(),
                        receiver(IBUS_RX_PIN),
                        led_red(LED_PIN_RED),
@@ -46,7 +46,8 @@ void Aircraft::read_receiver(Errors &error)
 
     // Logga i dati ricevuti dal ricevitore
     if (!receiver_error)
-        receiver.logData(receiver_data);
+        ;
+    // receiver.logData(receiver_data);
 }
 
 void Aircraft::update_leds(ASSIST_MODE assist_mode, CONTROLLER_STATE state)
@@ -93,9 +94,9 @@ void Aircraft::update_leds(ASSIST_MODE assist_mode, CONTROLLER_STATE state)
 
 void Aircraft::write_actuators()
 {
-    // Scrive i valori sugli attuatori
-    servo_x.write(output.x);
-    servo_y.write(output.y);
-    servo_z.write(output.z);
-    esc.write(output.throttle);
+    //Scrive i valori sugli attuatori
+    servo_x.writeServo(output.x);
+    servo_y.writeServo(output.y);
+    servo_z.writeServo(output.z);
+    esc.writeESC(output.throttle);
 }

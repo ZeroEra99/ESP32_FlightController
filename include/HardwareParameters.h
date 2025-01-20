@@ -14,12 +14,14 @@
  */
 
 #define ESC_PWM_CHANNEL 0 ///< Canale PWM utilizzato per l'ESC.
-#define ESC_PWM_FREQUENCY 50 ///< Frequenza del segnale PWM per l'ESC.
-#define ESC_PWM_RESOLUTION 16 ///< Risoluzione del segnale PWM per l'ESC.
 
 #define RGB_RED_PWM_CHANNEL 1 ///< Canale PWM utilizzato per il LED rosso.
 #define RGB_GREEN_PWM_CHANNEL 2 ///< Canale PWM utilizzato per il LED verde.
 #define RGB_BLUE_PWM_CHANNEL 3 ///< Canale PWM utilizzato per il LED blu.
+
+#define SERVO_X_PWM_CHANNEL 4 ///< Canale PWM utilizzato per il servomotore X.
+#define SERVO_Y_PWM_CHANNEL 5 ///< Canale PWM utilizzato per il servomotore Y.
+#define SERVO_Z_PWM_CHANNEL 6 ///< Canale PWM utilizzato per il servomotore Z.
 
 /** @defgroup PWM_Ranges Intervalli PWM
  *  @{
@@ -31,9 +33,6 @@
 /** @defgroup Servo_Ranges Intervalli Servo
  *  @{
  */
-#define SERVO_MIN 0   ///< Valore minimo per il servo (gradi).
-#define SERVO_MAX 180 ///< Valore massimo per il servo (gradi).
-
 #define SERVO_MIN_ANGLE -90 ///< Angolo minimo per il servo.
 #define SERVO_MAX_ANGLE 90  ///< Angolo massimo per il servo.
 /** @} */
