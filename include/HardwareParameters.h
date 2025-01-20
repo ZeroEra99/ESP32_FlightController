@@ -13,6 +13,14 @@
  * e ai valori utilizzati per configurare il sistema.
  */
 
+#define ESC_PWM_CHANNEL 0 ///< Canale PWM utilizzato per l'ESC.
+#define ESC_PWM_FREQUENCY 50 ///< Frequenza del segnale PWM per l'ESC.
+#define ESC_PWM_RESOLUTION 16 ///< Risoluzione del segnale PWM per l'ESC.
+
+#define RGB_RED_PWM_CHANNEL 1 ///< Canale PWM utilizzato per il LED rosso.
+#define RGB_GREEN_PWM_CHANNEL 2 ///< Canale PWM utilizzato per il LED verde.
+#define RGB_BLUE_PWM_CHANNEL 3 ///< Canale PWM utilizzato per il LED blu.
+
 /** @defgroup PWM_Ranges Intervalli PWM
  *  @{
  */

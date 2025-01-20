@@ -8,15 +8,13 @@
 
 #include <ESP32Servo.h>
 
-/**
- * @brief Classe per la gestione degli ESC (Electronic Speed Controller).
- * 
- * Consente il controllo del segnale PWM per pilotare i motori attraverso un ESC.
- */
 class ESC 
 {
 private:
-    Servo esc; ///< Oggetto Servo per la gestione del segnale PWM.
+    int pin;           ///< Pin associato all'ESC.
+    int pwmChannel;    ///< Canale PWM utilizzato dall'ESP32.
+    int frequency;     ///< Frequenza del segnale PWM (tipicamente 50 Hz per ESC).
+    int resolution;    ///< Risoluzione del segnale PWM (es. 16 bit).
 
 public:
     /**
@@ -25,8 +23,11 @@ public:
      * Inizializza l'ESC sul pin specificato.
      * 
      * @param pin Pin associato all'ESC.
+     * @param pwmChannel Canale PWM da utilizzare (0-15).
+     * @param frequency Frequenza PWM (default: 50 Hz).
+     * @param resolution Risoluzione PWM in bit (default: 16 bit).
      */
-    explicit ESC(int pin);
+    explicit ESC(int pin, int pwmChannel, int frequency = 50, int resolution = 16);
 
     /**
      * @brief Imposta il valore di controllo dell'ESC.
