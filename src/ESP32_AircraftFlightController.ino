@@ -6,8 +6,15 @@
 #include "WiFiManager.h"
 
 // Credenziali della rete Wi-Fi
-const char *ssid = "TIM-19028281";  ///< SSID della rete Wi-Fi
-const char *password = "casa12345"; ///< Password della rete Wi-Fi
+bool usaReteCasa = true;                ///< Flag per l'utilizzo della rete Wi-Fi di casa
+const char *ssidCasa = "TIM-19028281";  ///< SSID della rete Wi-Fi
+const char *passwordCasa = "casa12345"; ///< Password della rete Wi-Fi
+const char *ssidTelefono = "HONOR200";
+const char *passwordTelefono = "moltobella";
+const char *ssid = usaReteCasa ? ssidCasa : ssidTelefono;             ///< SSID della rete Wi-Fi
+const char *password = usaReteCasa ? passwordCasa : passwordTelefono; ///< Password della rete Wi-Fi
+
+const char *serverName = "Fede"; ///< Nome del server mDNS
 
 Aircraft *aircraft = nullptr;
 FlightController *flightController = nullptr;
@@ -23,6 +30,9 @@ void setup()
     Serial.begin(115200);
 
     WiFiManager::getInstance().begin(ssid, password);
+    WiFiManager::getInstance().discoverServer(serverName);
+    delay(1000);
+
     WiFiManager::getInstance().startServerCheckTask();
     delay(1000);
 
