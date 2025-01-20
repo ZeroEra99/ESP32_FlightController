@@ -1,10 +1,29 @@
 from flask import Flask, jsonify, request, render_template_string
 from datetime import datetime
+from zeroconf import ServiceInfo, Zeroconf
+import socket
+import threading
 
 app = Flask(__name__)
 
 # Variabile per salvare i log ricevuti
 logs = []
+
+# Funzione per registrare il servizio mDNS
+def start_mdns_service():
+    hostname = socket.gethostname()
+    local_ip = socket.gethostbyname(hostname)
+    service_info = ServiceInfo(
+        "_http._tcp.local.",
+        "ESP32Server._http._tcp.local.",
+        addresses=[socket.inet_aton(local_ip)],
+        port=5000,
+        properties={},
+        server=f"{hostname}.local."
+    )
+    zeroconf = Zeroconf()
+    zeroconf.register_service(service_info)
+    return zeroconf, service_info
 
 # Endpoint per ottenere i log in formato JSON
 @app.route('/get_logs', methods=['GET'])
@@ -29,7 +48,6 @@ def ping():
 @app.route('/favicon.ico')
 def favicon():
     return '', 204
-
 
 # Pagina per visualizzare i log
 @app.route('/logs')
@@ -75,8 +93,10 @@ setInterval(updateLogs, 20);
     """
     return render_template_string(template)
 
-
-
 if __name__ == '__main__':
-    # Avvia il server sul desktop
-    app.run(host='0.0.0.0', port=5000)
+    zeroconf, service_info = start_mdns_service()
+    try:
+        app.run(host='0.0.0.0', port=5000)
+    finally:
+        zeroconf.unregister_service(service_info)
+        zeroconf.close()
