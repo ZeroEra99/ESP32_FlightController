@@ -69,18 +69,25 @@ private:
     int pin_green; ///< Pin per il LED verde.
     int pin_blue;  ///< Pin per il LED blu.
 
+    int channel_red;   ///< Canale PWM per il LED rosso.
+    int channel_green; ///< Canale PWM per il LED verde.
+    int channel_blue;  ///< Canale PWM per il LED blu.
+
     LED_STATE state; ///< Stato attuale del LED (ON, OFF, BLINK).
 public:
     /**
-     * @brief Costruttore della classe RGB_LED.
+     * @brief Costruttore della classe RGB_LED
      *
-     * Inizializza il LED RGB con lo stato OFF.
-     *
-     * @param pin_red Pin per il canale rosso del LED RGB.
-     * @param pin_green Pin per il canale verde del LED RGB.
-     * @param pin_blue Pin per il canale blu del LED RGB.
+     * @param pin_red Pin fisico per il rosso
+     * @param channel_red Canale PWM per il rosso
+     * @param pin_green Pin fisico per il verde
+     * @param channel_green Canale PWM per il verde
+     * @param pin_blue Pin fisico per il blu
+     * @param channel_blue Canale PWM per il blu
+     * @param freq Frequenza PWM (default: 5000 Hz)
+     * @param resolution Risoluzione PWM (default: 8 bit)
      */
-    explicit RGB_LED(int pin_red, int pin_green, int pin_blue);
+    RGB_LED(int pin_red, int channel_red, int pin_green, int channel_green, int pin_blue, int channel_blue, int freq = 5000, int resolution = 8);
 
     /**
      * @brief Imposta lo stato del LED RGB.

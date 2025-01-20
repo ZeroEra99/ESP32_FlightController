@@ -68,33 +68,34 @@ void LED::update()
     }
 }
 
-RGB_LED::RGB_LED(int pin_red, int pin_green, int pin_blue)
+RGB_LED::RGB_LED(int pin_red, int channel_red, int pin_green, int channel_green, int pin_blue, int channel_blue, int freq, int resolution)
+    : pin_red(pin_red), channel_red(channel_red),
+      pin_green(pin_green), channel_green(channel_green),
+      pin_blue(pin_blue), channel_blue(channel_blue),
+      state(LED_STATE::OFF), color(COLOR::NONE),
+      blink_on(0), blink_off(0)
 {
-    // Configurazione di un LED RGB
-    this->pin_red = pin_red;
-    this->pin_green = pin_green;
-    this->pin_blue = pin_blue;
-    this->blink_on = 0;
-    this->blink_off = 0;
-    state = LED_STATE::OFF;
-    color = {};
-    // Inizializzazione del LED RGB
-    ledcSetup(0, 5000, 8);
-    ledcSetup(1, 5000, 8);
-    ledcSetup(2, 5000, 8);
-    ledcAttachPin(pin_red, 0);
-    ledcAttachPin(pin_green, 1);
-    ledcAttachPin(pin_blue, 2);
+    // Configura il PWM per ciascun canale
+    ledcSetup(channel_red, freq, resolution);
+    ledcSetup(channel_green, freq, resolution);
+    ledcSetup(channel_blue, freq, resolution);
 
-    ledcWrite(0, 255);
-    ledcWrite(1, 255);
-    ledcWrite(2, 255);
+    // Associa ciascun pin al relativo canale PWM
+    ledcAttachPin(pin_red, channel_red);
+    ledcAttachPin(pin_green, channel_green);
+    ledcAttachPin(pin_blue, channel_blue);
+
+    // Accendi tutti i colori
+    ledcWrite(channel_red, 255);
+    ledcWrite(channel_green, 255);
+    ledcWrite(channel_blue, 255);
 
     delay(500);
 
-    ledcWrite(0, 0);
-    ledcWrite(1, 0);
-    ledcWrite(2, 0);
+    // Spegni tutti i colori
+    ledcWrite(channel_red, 0);
+    ledcWrite(channel_green, 0);
+    ledcWrite(channel_blue, 0);
     Logger::getInstance().log(LogLevel::INFO, "RGB Light setup complete.");
 }
 
@@ -162,10 +163,20 @@ void RGB_LED::write(bool on, COLOR color)
     default:
         break;
     }
-    // Scrive i valori dei colori
-    ledcWrite(0, color_values[0]);
-    ledcWrite(1, color_values[1]);
-    ledcWrite(2, color_values[2]);
+
+    // Se lo stato è OFF, spegni tutti i canali
+    if (!on)
+    {
+        ledcWrite(channel_red, 0);
+        ledcWrite(channel_green, 0);
+        ledcWrite(channel_blue, 0);
+        return;
+    }
+
+    // Scrive i valori dei colori sui rispettivi canali PWM
+    ledcWrite(channel_red, color_values[0]);
+    ledcWrite(channel_green, color_values[1]);
+    ledcWrite(channel_blue, color_values[2]);
 }
 
 void RGB_LED::update()

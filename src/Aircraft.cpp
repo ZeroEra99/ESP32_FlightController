@@ -3,7 +3,7 @@
 #include "Logger.h"
 
 // Costruttore della classe Aircraft
-Aircraft::Aircraft() : esc(ESC_PIN),
+Aircraft::Aircraft() : esc(ESC_PIN, ESC_PWM_CHANNEL, ESC_PWM_FREQUENCY, ESC_PWM_RESOLUTION),
                        servo_x(SERVO_PIN_X),
                        servo_y(SERVO_PIN_Y),
                        servo_z(SERVO_PIN_Z),
@@ -11,7 +11,7 @@ Aircraft::Aircraft() : esc(ESC_PIN),
                        receiver(IBUS_RX_PIN),
                        led_red(LED_PIN_RED),
                        led_green(LED_PIN_GREEN),
-                       led_rgb(LED_PIN_RGB_RED, LED_PIN_RGB_GREEN, LED_PIN_RGB_BLUE)
+                       led_rgb(LED_PIN_RGB_RED, RGB_RED_PWM_CHANNEL, LED_PIN_RGB_GREEN, RGB_GREEN_PWM_CHANNEL, LED_PIN_RGB_BLUE, RGB_BLUE_PWM_CHANNEL)
 
 {
     // Inizializza i dati del sistema
