@@ -19,6 +19,12 @@ void WiFiManager::begin(const char *ssid, const char *password)
     }
     Logger::getInstance().log(LogLevel::INFO, "Connected to WiFi.");
 
+    configTime(0, 0, "pool.ntp.org");
+    while (time(nullptr) < 24 * 3600)
+    {
+        delay(100); // Aspetta che l'ora venga sincronizzata
+    }
+
     // Avvia il mDNS
     if (!MDNS.begin("esp32"))
     {
@@ -51,7 +57,7 @@ void WiFiManager::discoverServer(const char *serverName)
                 this->serverAddressString = ip.toString();               // Memorizza in std::string
                 this->serverAddress = this->serverAddressString.c_str(); // Usa il puntatore dalla stringa persistente
                 this->serverPort = MDNS.port(i);                         // Ottieni la porta
-                
+
                 Logger::getInstance().log(LogLevel::INFO, "Server found.");
                 this->serverSet = true;
                 return; // Fermati dopo aver trovato il server desiderato
@@ -87,7 +93,8 @@ void WiFiManager::startServerCheckTask()
 
 void WiFiManager::startServerDiscoveryTask(const char *serverName)
 {
-    struct TaskParams {
+    struct TaskParams
+    {
         WiFiManager *manager;
         const char *serverName;
     };
@@ -104,7 +111,6 @@ void WiFiManager::startServerDiscoveryTask(const char *serverName)
         1                      // Core su cui eseguire il task
     );
 }
-
 
 void WiFiManager::serverCheckTask(void *param)
 {
@@ -144,11 +150,7 @@ void WiFiManager::serverCheckTask(void *param)
         }
         else
         {
-            if (manager->serverStatus)
-            {
-                Logger::getInstance().log(LogLevel::ERROR, "Server address or port not set.");
-                manager->serverStatus = false;
-            }
+            manager->serverStatus = false;
         }
 
         // Attesa fino al prossimo controllo
@@ -158,7 +160,8 @@ void WiFiManager::serverCheckTask(void *param)
 
 void WiFiManager::serverDiscoveryTask(void *param)
 {
-    struct TaskParams {
+    struct TaskParams
+    {
         WiFiManager *manager;
         const char *serverName;
     };

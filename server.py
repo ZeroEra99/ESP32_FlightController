@@ -8,9 +8,10 @@ import signal
 
 app = Flask(__name__)
 
-# Variabili per salvare i log ricevuti
+# Variabili per salvare i log e i dati ricevuti
 display_logs = []  # Log visibili su /logs
 server_logs = []   # Log disponibili su /get_logs
+data_logs = []     # Dati numerici disponibili su /get_data_logs
 
 # Variabile per il controllo dell'arresto
 shutdown_signal = False
@@ -42,7 +43,6 @@ def get_display_logs():
     global display_logs
     return jsonify(display_logs), 200
 
-
 # Endpoint per ricevere i log dall'ESP32
 @app.route('/receive', methods=['POST'])
 def receive_logs():
@@ -53,6 +53,29 @@ def receive_logs():
     server_logs.append(timestamped_log)
     return "Logs received", 200
 
+# Endpoint per ricevere i dati numerici dall'ESP32
+@app.route('/get_data_logs', methods=['POST'])
+def receive_data_logs():
+    global data_logs
+    try:
+        data = request.get_json()
+        if isinstance(data, list):
+            timestamped_data = {
+                "timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                "data": data
+            }
+            data_logs.append(timestamped_data)
+            return "Data logs received", 200
+        else:
+            return "Invalid data format", 400
+    except Exception as e:
+        return f"Error processing data: {str(e)}", 500
+
+# Endpoint per ottenere i dati numerici in formato JSON
+@app.route('/get_data_logs', methods=['GET'])
+def get_data_logs():
+    global data_logs
+    return jsonify(data_logs), 200
 
 # Endpoint per verificare se il server è attivo
 @app.route('/ping', methods=['GET'])
@@ -64,12 +87,10 @@ def favicon():
     return '', 204
 
 # Endpoint per cancellare i log
-@app.route('/clear_logs', methods=['GET'])
-def clear_logs_endpoint():
+def clear_logs():
     global display_logs
     display_logs = []
     return "Logs cancellati dalla visualizzazione", 200
-
 
 # Pagina per visualizzare i log
 @app.route('/logs')
@@ -81,7 +102,7 @@ def display_logs_endpoint():
     <script>
 async function updateLogs() {
     try {
-        const response = await fetch('/get_display_logs'); // Modificato da /get_logs a /get_display_logs
+        const response = await fetch('/get_display_logs');
         if (response.ok) {
             const logs = await response.json();
             const logContainer = document.getElementById('logContainer');
@@ -89,7 +110,7 @@ async function updateLogs() {
             logs.forEach(log => {
                 const logElement = document.createElement('div');
                 logElement.textContent = log;
-                logContainer.appendChild(logElement);
+                logContainer.prepend(logElement);
             });
         }
     } catch (error) {
@@ -106,8 +127,6 @@ setInterval(updateLogs, 200);
 </html>
     """
     return render_template_string(template)
-
-
 
 # Endpoint per arrestare il server
 @app.route('/shutdown', methods=['POST'])

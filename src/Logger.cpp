@@ -4,7 +4,16 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 
-Logger::Logger() {}
+Logger::Logger()
+{
+    // Costruttore vuoto
+}
+
+Logger &Logger::getInstance()
+{
+    static Logger instance;
+    return instance;
+}
 
 void Logger::startLogTask()
 {
@@ -19,36 +28,24 @@ void Logger::startLogTask()
     );
 }
 
-// Singleton con oggetto statico locale
-Logger &Logger::getInstance()
-{
-    static Logger instance; ///< Istanza del logger
-    return instance;
-}
-
-// Metodo per generare un log
 void Logger::log(LogLevel level, const std::string &message)
 {
-    std::lock_guard<std::mutex> lock(mutex); // Blocca il mutex per evitare accessi concorrenti
+    std::lock_guard<std::mutex> lock(mutex);
+    std::string formattedLog = formatLog(level, message);
+    Serial.print(formattedLog.c_str());
 
-    std::string formattedLog = formatLog(level, message); // Formatta il log
-
-    Serial.print(formattedLog.c_str()); // Stampa il log sulla seriale
-
-    // Se il buffer è pieno, scarta il messaggio più vecchio
     if (logBuffer.size() >= maxBufferSize)
     {
         logBuffer.pop_front();
-        Serial.print("\tLog buffer full. Oldest log discarded.");
+        Serial.println("\tLog buffer full. Oldest log discarded.");
     }
-    // Aggiungi il log al buffer
     logBuffer.push_back(formattedLog);
     Serial.println("\tLog queued.");
 }
 
 std::string Logger::formatLog(LogLevel level, const std::string &message) const
 {
-    std::string levelStr; // Stringa per il livello di log
+    std::string levelStr;
     switch (level)
     {
     case LogLevel::ERROR:
@@ -62,45 +59,34 @@ std::string Logger::formatLog(LogLevel level, const std::string &message) const
         break;
     }
 
-    // Ottieni il timestamp attuale
     unsigned long currentTime = millis();
     unsigned long seconds = (currentTime / 1000) % 60;
     unsigned long minutes = (currentTime / 60000) % 60;
     unsigned long hours = currentTime / 3600000;
 
     char timestamp[16];
-    snprintf(timestamp, sizeof(timestamp), "%02lu:%02lu:%02lu", hours, minutes, seconds); // Formatta il timestamp
+    snprintf(timestamp, sizeof(timestamp), "%02lu:%02lu:%02lu", hours, minutes, seconds);
 
     return "[" + std::string(timestamp) + "] " + levelStr + ": " + message;
 }
 
 void Logger::sendLogToServer(const std::string &log)
 {
-    // Ottieni l'istanza del WiFiManager
     WiFiManager &wifiManager = WiFiManager::getInstance();
-
-    // Ottieni l'indirizzo del server e la porta
     const char *serverAddress = wifiManager.serverAddress;
     uint16_t serverPort = wifiManager.serverPort;
 
-    // Verifica che l'indirizzo e la porta siano validi
     if (!serverAddress || serverPort == 0)
-    {
         return;
-    }
 
-    // Costruisci l'URL del server
     String serverUrl = String("http://") + serverAddress + ":" + String(serverPort) + "/receive";
 
     if (WiFi.status() == WL_CONNECTED)
     {
         HTTPClient http;
-
-        // Inizia la connessione HTTP
         http.begin(serverUrl.c_str());
         http.addHeader("Content-Type", "text/plain");
 
-        // Esegui la richiesta POST con il log
         int httpResponseCode = http.POST(log.c_str());
 
         if (httpResponseCode <= 0)
@@ -112,17 +98,99 @@ void Logger::sendLogToServer(const std::string &log)
     }
 }
 
-// Metodo per impostare la dimensione massima del buffer
-void Logger::setMaxBufferSize(size_t size)
+void Logger::incrementCycle()
 {
     std::lock_guard<std::mutex> lock(mutex);
-    maxBufferSize = size;
+    currentCycle++;
+    tempDataRow.clear();
+    tempDataRow.push_back(std::to_string(currentCycle));
+}
 
-    // Se la nuova dimensione è inferiore al numero di messaggi in coda, rimuovi gli elementi più vecchi
-    while (logBuffer.size() > maxBufferSize)
+void Logger::logData(const std::string &varName, double value)
+{
+    std::lock_guard<std::mutex> lock(mutex);
+    tempDataRow.push_back(std::to_string(value));
+}
+
+void Logger::prepareDataBuffer()
+{
+    std::lock_guard<std::mutex> lock(mutex);
+
+    if (tempDataRow.empty())
     {
-        logBuffer.pop_front();
+        Serial.println("TempDataRow is empty, skipping buffer preparation.");
+        return;
     }
+
+    if (dataBuffer.size() >= maxBufferSize)
+    {
+        dataBuffer.pop_front();
+        Serial.println("DataBuffer full. Oldest entry discarded.");
+    }
+
+    dataBuffer.push_back(tempDataRow);
+    Serial.println("Current cycle data added to buffer.");
+}
+
+void Logger::sendDataToServer()
+{
+    WiFiManager &wifiManager = WiFiManager::getInstance();
+    const char *serverAddress = wifiManager.serverAddress;
+    uint16_t serverPort = wifiManager.serverPort;
+
+    if (!serverAddress || serverPort == 0)
+        return;
+
+    String serverUrl = String("http://") + serverAddress + ":" + String(serverPort) + "/get_data_logs";
+
+    while (!dataBuffer.empty() && WiFi.status() == WL_CONNECTED)
+    {
+        std::vector<std::string> row;
+
+        {
+            std::lock_guard<std::mutex> lock(mutex);
+            row = dataBuffer.front();
+        }
+
+        String jsonData = "[";
+        for (size_t i = 0; i < row.size(); ++i)
+        {
+            jsonData += "\"" + String(row[i].c_str()) + "\"";
+            if (i < row.size() - 1)
+                jsonData += ",";
+        }
+        jsonData += "]";
+
+        HTTPClient http;
+        http.begin(serverUrl.c_str());
+        http.addHeader("Content-Type", "application/json");
+
+        int httpResponseCode = http.POST(jsonData);
+
+        if (httpResponseCode > 0)
+        {
+            std::lock_guard<std::mutex> lock(mutex);
+            dataBuffer.pop_front();
+        }
+        else
+        {
+            Serial.println("Failed to send data logs to server. HTTP error: " + String(httpResponseCode));
+            break;
+        }
+
+        http.end();
+    }
+}
+
+void Logger::printCurrentCycleData() const
+{
+    std::lock_guard<std::mutex> lock(const_cast<std::mutex &>(mutex));
+    for (const auto &cell : tempDataRow)
+    {
+        Serial.print(cell.c_str());
+        Serial.print("\t");
+    }
+    Serial.println();
 }
 
 void Logger::logTask(void *param)
@@ -133,6 +201,7 @@ void Logger::logTask(void *param)
     {
         if (WiFiManager::getInstance().isServerActive())
         {
+            // Invio dei log
             std::string logMessage;
 
             {
@@ -148,9 +217,11 @@ void Logger::logTask(void *param)
             {
                 logger->sendLogToServer(logMessage);
             }
+
+            // Invio dei dati
+            logger->sendDataToServer();
         }
 
-        // Aspetta brevemente prima di riprovare, sia che il server sia attivo o meno
         vTaskDelay(100 / portTICK_PERIOD_MS);
     }
 }

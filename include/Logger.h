@@ -1,6 +1,6 @@
 /**
  * @file Logger.h
- * @brief Dichiarazione della classe Logger per la gestione dei log di sistema.
+ * @brief Dichiarazione della classe Logger per la gestione dei log di sistema e dei dati numerici.
  */
 #ifndef LOGGER_H
 #define LOGGER_H
@@ -9,6 +9,7 @@
 #include <vector>
 #include <mutex>
 #include <deque>
+#include <iostream>
 
 /**
  * @brief Enumerazione per i livelli di log disponibili.
@@ -21,70 +22,50 @@ enum class LogLevel
 };
 
 /**
- * @brief Classe per la gestione dei log di sistema.
+ * @brief Classe per la gestione dei log di sistema e dei dati numerici.
  *
- * Fornisce un'interfaccia per la registrazione e l'invio dei log di sistema.
- * I log vengono formattati in modo standard e inviati a un server remoto.
- *
- * La classe è implementata come un Singleton per garantire un'unica istanza globale.
+ * La classe fornisce un'interfaccia per la registrazione e l'invio di log di sistema
+ * e dati numerici. Implementata come Singleton.
  */
 class Logger
 {
 private:
-    /**
-     * @brief Costruttore privato della classe Logger.
-     *
-     * Il costruttore è privato per impedire la creazione di istanze esterne.
-     */
-    Logger();
+    Logger(); ///< Costruttore privato per garantire il Singleton.
 
     std::mutex mutex;                  ///< Mutex per la sincronizzazione.
     std::deque<std::string> logBuffer; ///< Buffer circolare per i log.
-    size_t maxBufferSize = 690;        ///< Dimensione massima configurabile del buffer.
+    size_t maxBufferSize = 100;        ///< Dimensione massima del buffer dei log.
 
-    static void logTask(void *param); // Task FreeRTOS per l'invio asincrono
+    std::deque<std::vector<std::string>> dataBuffer; ///< Buffer per i dati numerici.
+    size_t maxDataBufferSize = 600;                  ///< Dimensione massima del buffer dei dati.
+    std::vector<std::string> tempDataRow;            ///< Riga temporanea per i dati del ciclo corrente.
+    size_t currentCycle = 0;                         ///< Contatore del ciclo corrente.
+    std::string startTimestamp;                      ///< Timestamp di inizio raccolta dati.
+
+    bool headerInitialized = false; ///< Indica se l'header è stato inizializzato
+
+    static void logTask(void *param); ///< Task FreeRTOS per l'invio asincrono dei log.
 
 public:
-    /**
-     * @brief Ottiene l'istanza del logger.
-     *
-     * @return Puntatore all'istanza del logger.
-     */
-    static Logger &getInstance();
+    static Logger &getInstance(); ///< Ottiene l'istanza Singleton.
 
-    void startLogTask();               // Avvia il task di invio asincrono
+    void startLogTask(); ///< Avvia il task di invio asincrono dei log.
 
-    /**
-     * @brief Registra un messaggio di log.
-     *
-     * @param level Livello di log.
-     * @param message Messaggio da registrare.
-     */
-    void log(LogLevel level, const std::string &message);
+    void log(LogLevel level, const std::string &message); ///< Registra un messaggio di log.
 
-    /**
-     * @brief Formatta un messaggio di log.
-     *
-     * @param level Livello di log.
-     * @param message Messaggio da formattare.
-     *
-     * @return Messaggio formattato.
-     */
-    std::string formatLog(LogLevel level, const std::string &message) const;
+    std::string formatLog(LogLevel level, const std::string &message) const; ///< Formatta un messaggio di log.
 
-    /**
-     * @brief Invia un log al server remoto.
-     *
-     * @param log Messaggio di log da inviare.
-     */
-    void sendLogToServer(const std::string &log);
+    void sendLogToServer(const std::string &log); ///< Invia un log al server remoto.
 
-    /**
-     * @brief Imposta la dimensione massima del buffer dei log.
-     *
-     * @param size Nuova dimensione massima.
-     */
-    void setMaxBufferSize(size_t size);
+    void incrementCycle(); ///< Incrementa il contatore del ciclo e prepara la riga dati.
+
+    void logData(const std::string &varName, double value); ///< Registra un dato numerico.
+
+    void prepareDataBuffer(); ///< Organizza i dati raccolti nel buffer principale.
+
+    void sendDataToServer(); ///< Invia i dati raccolti al server remoto.
+
+    void printCurrentCycleData() const; ///< Stampa i dati del ciclo corrente sulla seriale.
 
     ~Logger() = default; ///< Distruttore di default.
 };
