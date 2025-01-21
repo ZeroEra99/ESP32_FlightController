@@ -2,6 +2,8 @@
 #include "pins.h"
 #include "Logger.h"
 
+bool imu_read = false, receiver_read = false;
+
 // Costruttore della classe Aircraft
 Aircraft::Aircraft() : esc(ESC_PIN, ESC_PWM_CHANNEL),
                        servo_x(SERVO_PIN_X, SERVO_X_PWM_CHANNEL),
@@ -33,7 +35,12 @@ void Aircraft::read_imu(Errors &error)
         error.IMU_ERROR = imu_error;
 
     if (!imu_error)
+    {
+        imu_read = true;
         imu.logData(imu_data);
+    }
+    else
+        imu_read = false;
 }
 
 void Aircraft::read_receiver(Errors &error)
@@ -46,8 +53,12 @@ void Aircraft::read_receiver(Errors &error)
 
     // Logga i dati ricevuti dal ricevitore
     if (!receiver_error)
-        ;
-    // receiver.logData(receiver_data);
+    {
+        receiver_read = true;
+        receiver.logData(receiver_data);
+    }
+    else
+        receiver_read = false;
 }
 
 void Aircraft::update_leds(ASSIST_MODE assist_mode, CONTROLLER_STATE state)
@@ -94,9 +105,21 @@ void Aircraft::update_leds(ASSIST_MODE assist_mode, CONTROLLER_STATE state)
 
 void Aircraft::write_actuators()
 {
-    //Scrive i valori sugli attuatori
+    // Scrive i valori sugli attuatori
     servo_x.writeServo(output.x);
     servo_y.writeServo(output.y);
     servo_z.writeServo(output.z);
     esc.writeESC(output.throttle);
+}
+
+void Aircraft::update_data_logger()
+{
+    // Aggiorna il logger dei dati
+    if (imu_read || receiver_read) // Andrà cambiato con && o rivisto
+    {
+        Logger::getInstance().prepareDataBuffer();     // Organizza e salva i dati del ciclo
+        Logger::getInstance().sendDataToServer();      // Invia i dati (se necessario)
+        Logger::getInstance().printCurrentCycleData(); // Opzionale: Stampa i dati del ciclo corrente
+        Logger::getInstance().incrementCycle(); // Passa al ciclo successivo
+    }
 }

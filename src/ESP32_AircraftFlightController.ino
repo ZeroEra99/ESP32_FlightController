@@ -61,5 +61,6 @@ void loop()
         controller.set_output(aircraft->output, aircraft->receiver_data, aircraft->imu.isSetupComplete);
         aircraft->update_leds(controller.assist_mode, controller.state);
         aircraft->write_actuators();
+        aircraft->update_data_logger();
     }
 }

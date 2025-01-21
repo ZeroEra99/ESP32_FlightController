@@ -69,6 +69,13 @@ public:
      */
     void write_actuators();
 
+    /**
+     * @brief Aggiorna il logger dei dati.
+     * 
+     * Se sono state effettuate letture dati, incrementa il ciclo.
+     */
+    void update_data_logger();
+
     IMU imu;                    ///< Sensore inerziale (IMU).
     ImuData imu_data;           ///< Dati letti dall'IMU.
     ReceiverData receiver_data; ///< Dati ricevuti dal pilota.
