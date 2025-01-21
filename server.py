@@ -3,11 +3,16 @@ from datetime import datetime
 from zeroconf import ServiceInfo, Zeroconf
 import socket
 import threading
+import os
+import signal
 
 app = Flask(__name__)
 
 # Variabile per salvare i log ricevuti
 logs = []
+
+# Variabile per il controllo dell'arresto
+shutdown_signal = False
 
 # Funzione per registrare il servizio mDNS
 def start_mdns_service():
@@ -35,7 +40,6 @@ def get_logs():
 @app.route('/receive', methods=['POST'])
 def receive_logs():
     global logs
-    # Ottieni i dati inviati dall'ESP32
     log_data = request.data.decode('utf-8')
     logs.append(f"[{datetime.now().strftime('%H:%M:%S')}] {log_data}")
     return "Logs received", 200
@@ -48,6 +52,14 @@ def ping():
 @app.route('/favicon.ico')
 def favicon():
     return '', 204
+
+# Endpoint per cancellare i log
+@app.route('/clear_logs', methods=['GET'])
+def clear_logs_endpoint():
+    global logs
+    logs = []
+    return "Logs cancellati", 200
+
 
 # Pagina per visualizzare i log
 @app.route('/logs')
@@ -62,41 +74,50 @@ async function updateLogs() {
         const response = await fetch('/get_logs');
         if (response.ok) {
             const logs = await response.json();
-            console.log('Log ricevuti dal server:', logs); // Log per debug
-            
             const logContainer = document.getElementById('logContainer');
-            logContainer.innerHTML = ''; // Svuota il contenitore prima di aggiornare
-            
+            logContainer.innerHTML = '';
             logs.forEach(log => {
-                const logElement = document.createElement('div'); // Crea un elemento per ogni log
+                const logElement = document.createElement('div');
                 logElement.textContent = log;
-                logContainer.appendChild(logElement); // Aggiungi al contenitore
+                logContainer.appendChild(logElement);
             });
         }
     } catch (error) {
         console.error('Errore nell aggiornamento dei log:', error);
     }
 }
-
-// Esegui l'aggiornamento ogni 20 ms
-setInterval(updateLogs, 20);
-
+setInterval(updateLogs, 200);
 </script>
-
 </head>
 <body>
     <h1>Logs ricevuti dall'ESP32</h1>
     <pre id="logContainer">Caricamento log...</pre>
 </body>
 </html>
-
     """
     return render_template_string(template)
 
+# Endpoint per arrestare il server
+@app.route('/shutdown', methods=['POST'])
+def shutdown():
+    global shutdown_signal
+    shutdown_signal = True
+    return "Server arrestato", 200
+
+# Funzione per avviare il server Flask
+def run_server():
+    app.run(host='0.0.0.0', port=5000)
+
 if __name__ == '__main__':
     zeroconf, service_info = start_mdns_service()
+    server_thread = threading.Thread(target=run_server)
+    server_thread.start()
+
     try:
-        app.run(host='0.0.0.0', port=5000)
+        while not shutdown_signal:
+            pass
     finally:
         zeroconf.unregister_service(service_info)
         zeroconf.close()
+        print("Server arrestato.")
+        os.kill(os.getpid(), signal.SIGTERM)
