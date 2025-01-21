@@ -8,8 +8,9 @@ import signal
 
 app = Flask(__name__)
 
-# Variabile per salvare i log ricevuti
-logs = []
+# Variabili per salvare i log ricevuti
+display_logs = []  # Log visibili su /logs
+server_logs = []   # Log disponibili su /get_logs
 
 # Variabile per il controllo dell'arresto
 shutdown_signal = False
@@ -33,16 +34,25 @@ def start_mdns_service():
 # Endpoint per ottenere i log in formato JSON
 @app.route('/get_logs', methods=['GET'])
 def get_logs():
-    global logs
-    return jsonify(logs), 200
+    global server_logs
+    return jsonify(server_logs), 200
+
+@app.route('/get_display_logs', methods=['GET'])
+def get_display_logs():
+    global display_logs
+    return jsonify(display_logs), 200
+
 
 # Endpoint per ricevere i log dall'ESP32
 @app.route('/receive', methods=['POST'])
 def receive_logs():
-    global logs
+    global display_logs, server_logs
     log_data = request.data.decode('utf-8')
-    logs.append(f"[{datetime.now().strftime('%H:%M:%S')}] {log_data}")
+    timestamped_log = f"[{datetime.now().strftime('%H:%M:%S')}] {log_data}"
+    display_logs.append(timestamped_log)
+    server_logs.append(timestamped_log)
     return "Logs received", 200
+
 
 # Endpoint per verificare se il server è attivo
 @app.route('/ping', methods=['GET'])
@@ -56,14 +66,14 @@ def favicon():
 # Endpoint per cancellare i log
 @app.route('/clear_logs', methods=['GET'])
 def clear_logs_endpoint():
-    global logs
-    logs = []
-    return "Logs cancellati", 200
+    global display_logs
+    display_logs = []
+    return "Logs cancellati dalla visualizzazione", 200
 
 
 # Pagina per visualizzare i log
 @app.route('/logs')
-def display_logs():
+def display_logs_endpoint():
     template = """
     <html>
 <head>
@@ -71,7 +81,7 @@ def display_logs():
     <script>
 async function updateLogs() {
     try {
-        const response = await fetch('/get_logs');
+        const response = await fetch('/get_display_logs'); // Modificato da /get_logs a /get_display_logs
         if (response.ok) {
             const logs = await response.json();
             const logContainer = document.getElementById('logContainer');
@@ -96,6 +106,8 @@ setInterval(updateLogs, 200);
 </html>
     """
     return render_template_string(template)
+
+
 
 # Endpoint per arrestare il server
 @app.route('/shutdown', methods=['POST'])
