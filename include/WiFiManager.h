@@ -14,8 +14,9 @@ public:
     bool isConnected();                                 // Verifica connessione WiFi
     bool isServerActive();                              // Stato del server
     void startServerCheckTask();                        // Avvia il task per controllare il server
+    void startServerDiscoveryTask(const char *serverName);                   // Avvia il task per scoprire il server
 
-    String serverAddressString;    // Indirizzo IP del server come stringa
+    String serverAddressString;          // Indirizzo IP del server come stringa
     const char *serverAddress = nullptr; // Indirizzo IP del server
     const char *serverName = nullptr;    // Nome del server
     uint16_t serverPort = 0;             // Porta del server
@@ -26,8 +27,10 @@ private:
     WiFiManager(const WiFiManager &) = delete;
     WiFiManager &operator=(const WiFiManager &) = delete;
 
-    static void serverCheckTask(void *param); // Task FreeRTOS per controllare il server
+    static void serverCheckTask(void *param);   // Task FreeRTOS per controllare il server
+    static void serverDiscoveryTask(void *param); // Task FreeRTOS per scoprire il server
 
+    bool serverSet = false;            // Flag per il server
     bool serverStatus = false;         // Stato del server
     unsigned long checkInterval = 200; // Intervallo tra i controlli in ms
 };

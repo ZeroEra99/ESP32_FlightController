@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 #include <mutex>
+#include <deque>
 
 /**
  * @brief Enumerazione per i livelli di log disponibili.
@@ -37,7 +38,9 @@ private:
      */
     Logger();
 
-    std::mutex mutex;             ///< Mutex per la sincronizzazione.
+    std::mutex mutex;                     ///< Mutex per la sincronizzazione.
+    std::deque<std::string> logBuffer;   ///< Buffer circolare per i log.
+    size_t maxBufferSize = 690;           ///< Dimensione massima configurabile del buffer.
 
 public:
     /**
@@ -71,6 +74,13 @@ public:
      * @param log Messaggio di log da inviare.
      */
     void sendLogToServer(const std::string &log);
+
+    /**
+     * @brief Imposta la dimensione massima del buffer dei log.
+     *
+     * @param size Nuova dimensione massima.
+     */
+    void setMaxBufferSize(size_t size);
 
     ~Logger() = default; ///< Distruttore di default.
 };

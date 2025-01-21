@@ -32,12 +32,12 @@ void WiFiManager::begin(const char *ssid, const char *password)
 
 void WiFiManager::discoverServer(const char *serverName)
 {
-    Logger::getInstance().log(LogLevel::INFO, "Searching for server.");
+    Serial.println("Searching for server.");
     int n = MDNS.queryService("http", "tcp"); // Cerca un servizio HTTP su TCP
 
     if (n == 0)
     {
-        Logger::getInstance().log(LogLevel::WARNING, "No service found.");
+        Serial.println("No service found.");
     }
     else
     {
@@ -51,13 +51,14 @@ void WiFiManager::discoverServer(const char *serverName)
                 this->serverAddressString = ip.toString();               // Memorizza in std::string
                 this->serverAddress = this->serverAddressString.c_str(); // Usa il puntatore dalla stringa persistente
                 this->serverPort = MDNS.port(i);                         // Ottieni la porta
-
-                Logger::getInstance().log(LogLevel::INFO,"Server found.");
+                
+                Logger::getInstance().log(LogLevel::INFO, "Server found.");
+                this->serverSet = true;
                 return; // Fermati dopo aver trovato il server desiderato
             }
         }
 
-        Logger::getInstance().log(LogLevel::WARNING, "Target server not found.");
+        Serial.println("Target server not found.");
     }
 }
 
@@ -83,6 +84,27 @@ void WiFiManager::startServerCheckTask()
         1                  // Core su cui eseguire il task
     );
 }
+
+void WiFiManager::startServerDiscoveryTask(const char *serverName)
+{
+    struct TaskParams {
+        WiFiManager *manager;
+        const char *serverName;
+    };
+
+    TaskParams *params = new TaskParams{this, serverName}; // Alloca i parametri
+
+    xTaskCreatePinnedToCore(
+        serverDiscoveryTask,   // Funzione del task
+        "ServerDiscoveryTask", // Nome del task
+        4096,                  // Dimensione dello stack
+        params,                // Parametro passato al task
+        1,                     // Priorità
+        nullptr,               // Handle del task
+        1                      // Core su cui eseguire il task
+    );
+}
+
 
 void WiFiManager::serverCheckTask(void *param)
 {
@@ -122,11 +144,37 @@ void WiFiManager::serverCheckTask(void *param)
         }
         else
         {
-            Logger::getInstance().log(LogLevel::ERROR, "Server address or port not set.");
-            manager->serverStatus = false;
+            if (manager->serverStatus)
+            {
+                Logger::getInstance().log(LogLevel::ERROR, "Server address or port not set.");
+                manager->serverStatus = false;
+            }
         }
 
         // Attesa fino al prossimo controllo
         vTaskDelay(manager->checkInterval / portTICK_PERIOD_MS);
     }
+}
+
+void WiFiManager::serverDiscoveryTask(void *param)
+{
+    struct TaskParams {
+        WiFiManager *manager;
+        const char *serverName;
+    };
+
+    TaskParams *params = static_cast<TaskParams *>(param);
+    WiFiManager *manager = params->manager;
+    const char *serverName = params->serverName;
+
+    while (true)
+    {
+        if (!manager->serverSet)
+        {
+            manager->discoverServer(serverName);
+        }
+        vTaskDelay(manager->checkInterval / portTICK_PERIOD_MS);
+    }
+
+    delete params; // Libera i parametri alla fine (anche se il task non termina mai)
 }

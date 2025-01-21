@@ -23,11 +23,24 @@ void Logger::log(LogLevel level, const std::string &message)
     // Stampa il log sulla seriale (debug)
     Serial.println(formattedLog.c_str());
 
-    // Verifica se il server è attivo prima di inviare il messaggio
+    // Verifica se il server è attivo
     if (WiFiManager::getInstance().isServerActive()) {
+        // Invia i messaggi in coda
+        while (!logBuffer.empty()) {
+            sendLogToServer(logBuffer.front());
+            logBuffer.pop_front(); // Rimuove il messaggio dal buffer
+        }
+
+        // Invia il messaggio corrente
         sendLogToServer(formattedLog);
     } else {
-        Serial.println("Server not active. Unable to send log.");
+        // Se il server non è attivo, accoda il messaggio
+        if (logBuffer.size() >= maxBufferSize) {
+            logBuffer.pop_front(); // Rimuove il messaggio più vecchio
+            Serial.println("Log buffer full. Oldest log discarded.");
+        }
+        logBuffer.push_back(formattedLog);
+        Serial.println("Server not active. Log queued.");
     }
 }
 
@@ -98,5 +111,17 @@ void Logger::sendLogToServer(const std::string &log)
     else
     {
         Serial.println("Wi-Fi not connected. Unable to send log.");
+    }
+}
+
+// Metodo per impostare la dimensione massima del buffer
+void Logger::setMaxBufferSize(size_t size)
+{
+    std::lock_guard<std::mutex> lock(mutex);
+    maxBufferSize = size;
+
+    // Se la nuova dimensione è inferiore al numero di messaggi in coda, rimuovi gli elementi più vecchi
+    while (logBuffer.size() > maxBufferSize) {
+        logBuffer.pop_front();
     }
 }

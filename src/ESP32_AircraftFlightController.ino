@@ -30,11 +30,10 @@ void setup()
     Serial.begin(115200);
 
     WiFiManager::getInstance().begin(ssid, password);
-    WiFiManager::getInstance().discoverServer(serverName);
-    delay(1000);
-
+    WiFiManager::getInstance().startServerDiscoveryTask(serverName);
+    delay(200);
     WiFiManager::getInstance().startServerCheckTask();
-    delay(1000);
+    delay(200);
 
     aircraft = new Aircraft();
     flightController = new FlightController(aircraft->receiver_data, aircraft->imu_data, aircraft->output);
