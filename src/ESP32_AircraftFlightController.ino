@@ -28,6 +28,7 @@ void setup()
 {
     // put your setup code here, to run once:
     Serial.begin(115200);
+    Logger::getInstance().startLogTask();
 
     WiFiManager::getInstance().begin(ssid, password);
     WiFiManager::getInstance().startServerDiscoveryTask(serverName);

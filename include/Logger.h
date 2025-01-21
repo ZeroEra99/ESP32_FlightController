@@ -38,9 +38,11 @@ private:
      */
     Logger();
 
-    std::mutex mutex;                     ///< Mutex per la sincronizzazione.
-    std::deque<std::string> logBuffer;   ///< Buffer circolare per i log.
-    size_t maxBufferSize = 690;           ///< Dimensione massima configurabile del buffer.
+    std::mutex mutex;                  ///< Mutex per la sincronizzazione.
+    std::deque<std::string> logBuffer; ///< Buffer circolare per i log.
+    size_t maxBufferSize = 690;        ///< Dimensione massima configurabile del buffer.
+
+    static void logTask(void *param); // Task FreeRTOS per l'invio asincrono
 
 public:
     /**
@@ -49,6 +51,8 @@ public:
      * @return Puntatore all'istanza del logger.
      */
     static Logger &getInstance();
+
+    void startLogTask();               // Avvia il task di invio asincrono
 
     /**
      * @brief Registra un messaggio di log.
