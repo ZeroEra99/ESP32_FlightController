@@ -8,16 +8,16 @@
 
 /**
  * @brief Parametri hardware del sistema.
- * 
+ *
  * Questo file contiene le definizioni di macro relative ai limiti hardware
  * e ai valori utilizzati per configurare il sistema.
  */
 
 #define ESC_PWM_CHANNEL 0 ///< Canale PWM utilizzato per l'ESC.
 
-#define RGB_RED_PWM_CHANNEL 1 ///< Canale PWM utilizzato per il LED rosso.
+#define RGB_RED_PWM_CHANNEL 1   ///< Canale PWM utilizzato per il LED rosso.
 #define RGB_GREEN_PWM_CHANNEL 2 ///< Canale PWM utilizzato per il LED verde.
-#define RGB_BLUE_PWM_CHANNEL 3 ///< Canale PWM utilizzato per il LED blu.
+#define RGB_BLUE_PWM_CHANNEL 3  ///< Canale PWM utilizzato per il LED blu.
 
 #define SERVO_X_PWM_CHANNEL 4 ///< Canale PWM utilizzato per il servomotore X.
 #define SERVO_Y_PWM_CHANNEL 5 ///< Canale PWM utilizzato per il servomotore Y.
@@ -40,24 +40,24 @@
 /** @defgroup Switch_Ranges Intervalli Switch
  *  @{
  */
-#define SWITCH_MIN 0           ///< Valore minimo per gli switch.
-#define SWITCH_SW_ABD_MAX 1    ///< Valore massimo per gli switch A, B e C.
-#define SWITCH_SW_C_MAX 2      ///< Valore massimo per lo switch D.
+#define SWITCH_MIN 0        ///< Valore minimo per gli switch.
+#define SWITCH_SW_ABD_MAX 1 ///< Valore massimo per gli switch A, B e C.
+#define SWITCH_SW_C_MAX 2   ///< Valore massimo per lo switch D.
 /** @} */
 
 /** @defgroup Potentiometer_Ranges Intervalli Potenziometri
  *  @{
  */
-#define VRA_MIN 0       ///< Valore minimo per il potenziometro A.
-#define VRA_MAX 100     ///< Valore massimo per il potenziometro A.
-#define VRB_MIN 0       ///< Valore minimo per il potenziometro B.
-#define VRB_MAX 2       ///< Valore massimo per il potenziometro B.
+#define VRA_MIN 0   ///< Valore minimo per il potenziometro A.
+#define VRA_MAX 100 ///< Valore massimo per il potenziometro A.
+#define VRB_MIN 0   ///< Valore minimo per il potenziometro B.
+#define VRB_MAX 2   ///< Valore massimo per il potenziometro B.
 /** @} */
 
 /** @defgroup Throttle_Ranges Intervalli Throttle
  *  @{
  */
-#define THROTTLE_MIN 0  ///< Valore minimo per il throttle.
+#define THROTTLE_MIN 0   ///< Valore minimo per il throttle.
 #define THROTTLE_MAX 100 ///< Valore massimo per il throttle.
 /** @} */
 

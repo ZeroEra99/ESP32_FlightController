@@ -8,7 +8,7 @@
 
 /**
  * @brief Configurazioni del controller di volo.
- * 
+ *
  * Questo file contiene le definizioni di macro per i parametri PID, limiti e altri valori di configurazione
  * utilizzati nel sistema.
  */
@@ -57,7 +57,7 @@
 
 #define TUNING_TARGET_AXIS 0 ///< Asse target per il tuning (0 = X, 1 = Y, 2 = Z).
 
-#define FORWARD_SPEED_THRESHOLD 1 ///< Soglia della velocità in avanti per la riduzione del controllo.
+#define FORWARD_SPEED_THRESHOLD 1  ///< Soglia della velocità in avanti per la riduzione del controllo.
 #define SERVO_REDUCTION_FACTOR 0.5 ///< Fattore di riduzione per i servo.
 
 #define AUTO_LAND_X 0        ///< Posizione automatica per il rollio in modalità di atterraggio.

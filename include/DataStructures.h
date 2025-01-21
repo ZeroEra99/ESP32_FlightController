@@ -137,10 +137,10 @@ struct Output
  */
 struct ImuData
 {
-    Euler gyro;        ///< Velocità angolari (giroscopio).
-    Euler accel;       ///< Accelerazioni lineari.
-    Quaternion quat;   ///< Orientamento (quaternione).
-    float vel;         ///< Velocità integrata.
+    Euler gyro;      ///< Velocità angolari (giroscopio).
+    Euler accel;     ///< Accelerazioni lineari.
+    Quaternion quat; ///< Orientamento (quaternione).
+    float vel;       ///< Velocità integrata.
 };
 
 /**

@@ -21,7 +21,6 @@
 class Aircraft
 {
 private:
-
     ESC esc;                              ///< Controller elettronico per i motori.
     ServoMotor servo_x, servo_y, servo_z; ///< Servomotori per il controllo delle superfici di controllo.
     Receiver receiver;                    ///< Ricevitore per i comandi del pilota.
@@ -70,7 +69,7 @@ public:
      */
     void write_actuators();
 
-    IMU imu;
+    IMU imu;                    ///< Sensore inerziale (IMU).
     ImuData imu_data;           ///< Dati letti dall'IMU.
     ReceiverData receiver_data; ///< Dati ricevuti dal pilota.
     Output output;              ///< Output per i servocomandi e l'ESC.
