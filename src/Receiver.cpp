@@ -130,22 +130,14 @@ bool Receiver::read(ReceiverData &data)
 
 void Receiver::logData(const ReceiverData &data)
 {
-     Serial.print(" CH2: ");
-     Serial.print(data.y);
-     Serial.print(" CH3: ");
-     Serial.print(data.throttle);
-     Serial.print(" CH4: ");
-     Serial.print(data.z);
-     Serial.print(" CH5: ");
-     Serial.print(data.swa);
-     Serial.print(" CH6: ");
-     Serial.print(data.swb);
-     Serial.print(" CH7: ");
-     Serial.print(data.swc);
-     Serial.print(" CH8: ");
-     Serial.print(data.swd);
-     Serial.print(" CH9: ");
-     Serial.print(data.vra);
-     Serial.print(" CH10: ");
-     Serial.println(data.vrb);
+    Logger::getInstance().logData("x", data.x);
+    Logger::getInstance().logData("y", data.y);
+    Logger::getInstance().logData("throttle", data.throttle);
+    Logger::getInstance().logData("z", data.z);
+    Logger::getInstance().logData("swa", data.swa);
+    Logger::getInstance().logData("swb", data.swb);
+    Logger::getInstance().logData("swc", data.swc);
+    Logger::getInstance().logData("swd", data.swd);
+    Logger::getInstance().logData("vra", data.vra);
+    Logger::getInstance().logData("vrb", data.vrb);
 }

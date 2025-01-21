@@ -34,31 +34,20 @@ IMU::IMU()
 
 void IMU::logData(const ImuData &data)
 {
-    Serial.print("G_X: ");
-    Serial.print(data.gyro.x);
-    Serial.print(" G_Y: ");
-    Serial.print(data.gyro.y);
-    Serial.print(" G_Z: ");
-    Serial.print(data.gyro.z);
+    Logger::getInstance().logData("G_X", data.gyro.x);
+    Logger::getInstance().logData("G_Y", data.gyro.y);
+    Logger::getInstance().logData("G_Z", data.gyro.z);
 
-    Serial.print(" Ac_X: ");
-    Serial.print(data.accel.x);
-    Serial.print(" Ac_Y: ");
-    Serial.print(data.accel.y);
-    Serial.print(" Ac_Z: ");
-    Serial.print(data.accel.z);
+    Logger::getInstance().logData("Ac_X", data.accel.x);
+    Logger::getInstance().logData("Ac_Y", data.accel.y);
+    Logger::getInstance().logData("Ac_Z", data.accel.z);
 
-    Serial.print(" Q_W: ");
-    Serial.print(data.quat.w);
-    Serial.print(" Q_X: ");
-    Serial.print(data.quat.x);
-    Serial.print(" Q_Y: ");
-    Serial.print(data.quat.y);
-    Serial.print(" Q_Z: ");
-    Serial.print(data.quat.z);
+    Logger::getInstance().logData("Q_W", data.quat.w);
+    Logger::getInstance().logData("Q_X", data.quat.x);
+    Logger::getInstance().logData("Q_Y", data.quat.y);
+    Logger::getInstance().logData("Q_Z", data.quat.z);
 
-    Serial.print(" V: ");
-    Serial.println(data.vel);
+    Logger::getInstance().logData("V", data.vel);
 }
 
 bool IMU::read(ImuData &data)
