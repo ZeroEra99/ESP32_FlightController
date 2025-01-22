@@ -85,7 +85,7 @@ public:
      * @param output Riferimento alla struttura di output da aggiornare.
      * @param receiver_data Dati ricevuti dal pilota.
      */
-    void set_output(Output output, ReceiverData &receiver_data, bool imuSetupComplete);
+    void set_output(Output &output, ReceiverData &receiver_data, bool imuSetupComplete);
 
     // Stati del controllore
     CONTROLLER_STATE state;                ///< Stato attuale del controller.

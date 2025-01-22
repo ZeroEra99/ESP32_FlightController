@@ -193,28 +193,29 @@ void SystemController::update_modes(ReceiverData &receiver_data, bool imuSetupCo
     }
 }
 
-void SystemController::set_output(Output output, ReceiverData &receiver_data, bool imuSetupComplete)
+void SystemController::set_output(Output &output, ReceiverData &receiver_data, bool imuSetupComplete)
 {
+    static bool critical_error = false;
     // Aggiorna gli output in base allo stato del sistema
     if (state == CONTROLLER_STATE::DISARMED)
     {
         output = {0, 0, 0, 0};
         return;
     }
-
-    output.throttle = receiver_data.throttle;
-
-    if (assist_mode == ASSIST_MODE::MANUAL)
+    else if (assist_mode == ASSIST_MODE::MANUAL)
     {
         output.x = receiver_data.x;
         output.y = receiver_data.y;
         output.z = receiver_data.z;
+        output.throttle = receiver_data.throttle;
     }
-
-    if ((error.IMU_ERROR || !imuSetupComplete) && error.RECEIVER_ERROR)
+    else if ((error.IMU_ERROR || !imuSetupComplete) && error.RECEIVER_ERROR)
     {
         output = {ITSRAININGMAN, HALLELUJAH, ITSRAININGMAN, HEYMAN};
-        Logger::getInstance().log(LogLevel::ERROR, "Critical error detected. System halted. Prayers sent.");
+        if(!critical_error){
+            Logger::getInstance().log(LogLevel::ERROR, "Critical error detected. System halted. Prayers sent.");
+            critical_error = true;
+        }
         return;
     }
 }
