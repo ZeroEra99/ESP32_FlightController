@@ -6,6 +6,8 @@
 #ifndef ACTUATOR_H
 #define ACTUATOR_H
 
+#include <ESP32Servo.h>
+
 /**
  * @brief Classe per la gestione di un ESC (Electronic Speed Controller).
  *
@@ -15,21 +17,16 @@
 class ESC
 {
 private:
-    int pin;        ///< Pin associato all'ESC.
-    int pwmChannel; ///< Canale PWM utilizzato dall'ESP32.
-    int frequency;  ///< Frequenza del segnale PWM (tipicamente 50 Hz per ESC).
-    int resolution; ///< Risoluzione del segnale PWM (es. 16 bit).
+    Servo esc; ///< Oggetto Servo associato all'ESC.
+    int pin;   ///< Pin associato all'ESC.
 
 public:
     /**
      * @brief Costruttore della classe ESC.
      *
      * @param pin Pin associato all'ESC.
-     * @param pwmChannel Canale PWM utilizzato dall'ESP32.
-     * @param frequency Frequenza del segnale PWM (default: 50 Hz).
-     * @param resolution Risoluzione del segnale PWM (default: 11 bit).
      */
-    explicit ESC(int pin, int pwmChannel, int frequency = 50, int resolution = 11);
+    explicit ESC(int pin);
 
     /**
      * @brief Imposta il valore del segnale PWM per l'ESC.
@@ -48,21 +45,16 @@ public:
 class ServoMotor
 {
 private:
-    int pin;        ///< Pin associato al servomotore.
-    int pwmChannel; ///< Canale PWM utilizzato dall'ESP32.
-    int frequency;  ///< Frequenza del segnale PWM (50 Hz per servomotori).
-    int resolution; ///< Risoluzione PWM in bit (ad esempio, 16 bit).
+    Servo servo; ///< Oggetto Servo associato al servomotore.
+    int pin;     ///< Pin associato al servomotore.
 
 public:
     /**
      * @brief Costruttore della classe ServoMotor.
      *
      * @param pin Pin associato al servomotore.
-     * @param pwmChannel Canale PWM utilizzato dall'ESP32.
-     * @param frequency Frequenza del segnale PWM (default: 50 Hz).
-     * @param resolution Risoluzione del segnale PWM (default: 11 bit).
      */
-    explicit ServoMotor(int pin, int pwmChannel, int frequency = 50, int resolution = 11);
+    explicit ServoMotor(int pin);
 
     /**
      * @brief Imposta il valore del segnale PWM per il servomotore.

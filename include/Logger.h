@@ -51,7 +51,7 @@ public:
 
     void startLogTask(); ///< Avvia il task di invio asincrono dei log.
 
-    void log(LogLevel level, const std::string &message); ///< Registra un messaggio di log.
+    void log(LogLevel level, const std::string &message, bool sendToServer = true); ///< Registra un messaggio di log.
 
     std::string formatLog(LogLevel level, const std::string &message) const; ///< Formatta un messaggio di log.
 

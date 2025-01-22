@@ -5,15 +5,15 @@
 bool imu_read = false, receiver_read = false;
 
 // Costruttore della classe Aircraft
-Aircraft::Aircraft() : esc(ESC_PIN, ESC_PWM_CHANNEL),
-                       servo_x(SERVO_PIN_X, SERVO_X_PWM_CHANNEL),
-                       servo_y(SERVO_PIN_Y, SERVO_Y_PWM_CHANNEL),
-                       servo_z(SERVO_PIN_Z, SERVO_Z_PWM_CHANNEL),
+Aircraft::Aircraft() : esc(ESC_PIN),
+                       servo_x(SERVO_PIN_X),
+                       servo_y(SERVO_PIN_Y),
+                       servo_z(SERVO_PIN_Z),
                        imu(),
                        receiver(IBUS_RX_PIN),
                        led_red(LED_PIN_RED),
                        led_green(LED_PIN_GREEN),
-                       led_rgb(LED_PIN_RGB_RED, RGB_RED_PWM_CHANNEL, LED_PIN_RGB_GREEN, RGB_GREEN_PWM_CHANNEL, LED_PIN_RGB_BLUE, RGB_BLUE_PWM_CHANNEL)
+                       led_rgb(LED_PIN_RGB_RED, LED_PIN_RGB_GREEN, LED_PIN_RGB_BLUE)
 
 {
     // Inizializza i dati del sistema
@@ -117,9 +117,8 @@ void Aircraft::update_data_logger()
     // Aggiorna il logger dei dati
     if (imu_read || receiver_read) // Andrà cambiato con && o rivisto
     {
-        Logger::getInstance().prepareDataBuffer();     // Organizza e salva i dati del ciclo
-        Logger::getInstance().sendDataToServer();      // Invia i dati (se necessario)
-        Logger::getInstance().printCurrentCycleData(); // Opzionale: Stampa i dati del ciclo corrente
+        //Logger::getInstance().prepareDataBuffer();     // Organizza e salva i dati del ciclo
+        //Logger::getInstance().sendDataToServer();      // Invia i dati (se necessario)
         Logger::getInstance().incrementCycle(); // Passa al ciclo successivo
     }
 }
