@@ -10,37 +10,13 @@ WiFiManager &WiFiManager::getInstance()
 
 void WiFiManager::begin(const char *ssid, const char *password)
 {
-    WiFi.begin(ssid, password);
-    Logger::getInstance().log(LogLevel::INFO, "Connecting to WiFi...", false);
-    int tick;
-    while (tick++ < 20)
-    {
-        delay(50);
-        Serial.print(".");
-    }
-    if (WiFi.status() == WL_CONNECTED)
-    {
-        Logger::getInstance().log(LogLevel::INFO, "Connected to WiFi.", false);
+    this->ssid = ssid;
+    this->password = password;
+}
 
-        configTime(0, 0, "pool.ntp.org");
-        while (time(nullptr) < 24 * 3600)
-        {
-            delay(100); // Aspetta che l'ora venga sincronizzata
-        }
-        Logger::getInstance().log(LogLevel::INFO, "Time synchronized.", false);
-    }
-    else
-        Logger::getInstance().log(LogLevel::WARNING, "Failed to connect to WiFi.", false);
-
-    // Avvia il mDNS
-    if (!MDNS.begin("esp32"))
-    {
-        Logger::getInstance().log(LogLevel::ERROR, "Error starting mDNS.", false);
-    }
-    else
-    {
-        Logger::getInstance().log(LogLevel::INFO, "mDNS responder started.", false);
-    }
+bool WiFiManager::isServerActive()
+{
+    return serverStatus;
 }
 
 void WiFiManager::discoverServer(const char *serverName)
@@ -52,7 +28,7 @@ void WiFiManager::discoverServer(const char *serverName)
     {
         if (serviceFound)
         {
-            Logger::getInstance().log(LogLevel::WARNING, "No service found.", false);
+            Logger::getInstance().log(LogLevel::WARNING, "No service found.");
             serviceFound = false;
         }
     }
@@ -60,45 +36,68 @@ void WiFiManager::discoverServer(const char *serverName)
     {
         if (!serviceFound)
         {
-            Logger::getInstance().log(LogLevel::INFO, "Service found.", false);
+            Logger::getInstance().log(LogLevel::INFO, "Service found.");
             serviceFound = true;
         }
         for (int i = 0; i < n; ++i)
         {
-            // Confronta il nome del servizio con quello specificato
             if (MDNS.hostname(i) == serverName)
             {
-                this->serverName = serverName;                           // Salva il nome del server
-                IPAddress ip = MDNS.IP(i);                               // Ottieni l'indirizzo IP come IPAddress
-                this->serverAddressString = ip.toString();               // Memorizza in std::string
-                this->serverAddress = this->serverAddressString.c_str(); // Usa il puntatore dalla stringa persistente
-                this->serverPort = MDNS.port(i);                         // Ottieni la porta
+                this->serverName = serverName;
+                IPAddress ip = MDNS.IP(i);
+                this->serverAddressString = ip.toString();
+                this->serverAddress = this->serverAddressString.c_str();
+                this->serverPort = MDNS.port(i);
 
                 if (!serverOk)
                 {
-                    Logger::getInstance().log(LogLevel::INFO, "Server found.", false);
+                    Logger::getInstance().log(LogLevel::INFO, "Server found.");
                     serverOk = true;
                 }
                 this->serverSet = true;
-                return; // Fermati dopo aver trovato il server desiderato
+                return;
             }
         }
         if (serverOk)
         {
-            Logger::getInstance().log(LogLevel::WARNING, "Target server not found.", false);
+            Logger::getInstance().log(LogLevel::WARNING, "Target server not found.");
             serverOk = false;
         }
     }
 }
 
-bool WiFiManager::isConnected()
+void WiFiManager::startConnectionTask()
 {
-    return WiFi.status() == WL_CONNECTED;
+    xTaskCreatePinnedToCore(
+        WiFiConnectionTask,   // Funzione del task
+        "WiFiConnectionTask", // Nome del task
+        4096,                 // Dimensione dello stack
+        this,                 // Parametro passato al task
+        1,                    // Priorità
+        nullptr,              // Handle del task
+        1                     // Core su cui eseguire il task
+    );
 }
 
-bool WiFiManager::isServerActive()
+void WiFiManager::startServerDiscoveryTask(const char *serverName)
 {
-    return serverStatus; // Restituisce lo stato aggiornato dal task
+    struct TaskParams
+    {
+        WiFiManager *manager;
+        const char *serverName;
+    };
+
+    TaskParams *params = new TaskParams{this, serverName};
+
+    xTaskCreatePinnedToCore(
+        serverDiscoveryTask,   // Funzione del task
+        "ServerDiscoveryTask", // Nome del task
+        4096,                  // Dimensione dello stack
+        params,                // Parametro passato al task
+        1,                     // Priorità
+        nullptr,               // Handle del task
+        1                      // Core su cui eseguire il task
+    );
 }
 
 void WiFiManager::startServerCheckTask()
@@ -114,70 +113,45 @@ void WiFiManager::startServerCheckTask()
     );
 }
 
-void WiFiManager::startServerDiscoveryTask(const char *serverName)
-{
-    struct TaskParams
-    {
-        WiFiManager *manager;
-        const char *serverName;
-    };
-
-    TaskParams *params = new TaskParams{this, serverName}; // Alloca i parametri
-
-    xTaskCreatePinnedToCore(
-        serverDiscoveryTask,   // Funzione del task
-        "ServerDiscoveryTask", // Nome del task
-        4096,                  // Dimensione dello stack
-        params,                // Parametro passato al task
-        1,                     // Priorità
-        nullptr,               // Handle del task
-        1                      // Core su cui eseguire il task
-    );
-}
-
-void WiFiManager::serverCheckTask(void *param)
+void WiFiManager::WiFiConnectionTask(void *param)
 {
     WiFiManager *manager = static_cast<WiFiManager *>(param);
-    WiFiClient client;
 
     while (true)
     {
-        if (!manager->isConnected())
+        if (WiFi.status() != WL_CONNECTED)
         {
-            manager->serverStatus = false;
-            Logger::getInstance().log(LogLevel::WARNING, "WiFi not connected.", false);
-            vTaskDelay(manager->checkInterval / portTICK_PERIOD_MS);
-            continue;
-        }
-        String serverAddress = manager->serverAddress;
-        if (!serverAddress.isEmpty() && manager->serverPort > 0)
-        {
-            // Prova a connettersi al server
-            if (client.connect(manager->serverAddress, manager->serverPort))
+            if (manager->wifiConnected)
+                Logger::getInstance().log(LogLevel::WARNING, "WiFi connection lost.");
+
+            manager->wifiConnected = false;
+
+            Logger::getInstance().log(LogLevel::WARNING, "Attempting to connect to WiFi...");
+            WiFi.begin(manager->ssid, manager->password);
+            while (WiFi.status() != WL_CONNECTED)
+                ;
+            // Configura il time NTP
+            Logger::getInstance().log(LogLevel::INFO, "Synchronizing time with NTP server...");
+            configTime(0, 0, "pool.ntp.org");
+            while (time(nullptr) < 24 * 3600)
             {
-                client.stop();
-                if (!manager->serverStatus)
-                {
-                    manager->serverStatus = true;
-                    Logger::getInstance().log(LogLevel::INFO, "Connection to server established.", false);
-                }
+                delay(100); // Aspetta che l'ora venga sincronizzata
+            }
+            Logger::getInstance().log(LogLevel::INFO, "Time synchronized.");
+
+            // Avvia il mDNS
+            if (!MDNS.begin("esp32"))
+            {
+                Logger::getInstance().log(LogLevel::ERROR, "Error starting mDNS.");
             }
             else
             {
-                if (manager->serverStatus)
-                {
-                    manager->serverStatus = false;
-                    Logger::getInstance().log(LogLevel::WARNING, "Connection to server failed.", false);
-                }
+                Logger::getInstance().log(LogLevel::INFO, "mDNS responder started.");
             }
-        }
-        else
-        {
-            manager->serverStatus = false;
-        }
 
-        // Attesa fino al prossimo controllo
-        vTaskDelay(manager->checkInterval / portTICK_PERIOD_MS);
+            manager->wifiConnected = true;
+            Logger::getInstance().log(LogLevel::INFO, "Connected to WiFi.");
+        }
     }
 }
 
@@ -195,12 +169,63 @@ void WiFiManager::serverDiscoveryTask(void *param)
 
     while (true)
     {
-        if (!manager->serverSet)
+        if (!manager->serverSet && manager->wifiConnected)
         {
             manager->discoverServer(serverName);
         }
-        vTaskDelay(manager->checkInterval / portTICK_PERIOD_MS);
+        else if (!manager->wifiConnected)
+        {
+            manager->serverSet = false;
+        }
+        vTaskDelay(manager->checkServerInterval / portTICK_PERIOD_MS);
     }
 
-    delete params; // Libera i parametri alla fine (anche se il task non termina mai)
+    delete params;
+}
+
+void WiFiManager::serverCheckTask(void *param)
+{
+    WiFiManager *manager = static_cast<WiFiManager *>(param);
+    WiFiClient client;
+
+    while (true)
+    {
+        if (!manager->wifiConnected || !manager->serverSet)
+        {
+            if (manager->serverStatus)
+            {
+                manager->serverStatus = false;
+                Logger::getInstance().log(LogLevel::WARNING, "WiFi not connected. Skipping server check.");
+            }
+        }
+        else
+        {
+            String serverAddress = manager->serverAddress;
+            if (!serverAddress.isEmpty() && manager->serverPort > 0)
+            {
+                if (client.connect(manager->serverAddress, manager->serverPort))
+                {
+                    client.stop();
+                    if (!manager->serverStatus)
+                    {
+                        manager->serverStatus = true;
+                        Logger::getInstance().log(LogLevel::INFO, "Connection to server established.");
+                    }
+                }
+                else
+                {
+                    if (manager->serverStatus)
+                    {
+                        manager->serverStatus = false;
+                        Logger::getInstance().log(LogLevel::WARNING, "Connection to server failed.");
+                    }
+                }
+            }
+            else
+            {
+                manager->serverStatus = false;
+            }
+        }
+        vTaskDelay(manager->checkServerInterval / portTICK_PERIOD_MS);
+    }
 }

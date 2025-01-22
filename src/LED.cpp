@@ -12,8 +12,6 @@ LED::LED(int pin)
     // Inizializzazione del LED
     pinMode(pin, OUTPUT);
     digitalWrite(pin, HIGH);
-    delay(500);
-    digitalWrite(pin, LOW);
     Logger::getInstance().log(LogLevel::INFO, "LED setup complete.");
 }
 
@@ -84,14 +82,6 @@ RGB_LED::RGB_LED(int pin_red, int pin_green, int pin_blue)
     analogWrite(pin_red, 255);
     analogWrite(pin_green, 255);
     analogWrite(pin_blue, 255);
-
-    delay(500);
-
-    // Spegni tutti i colori
-    analogWrite(pin_red, 0);
-    analogWrite(pin_green, 0);
-    analogWrite(pin_blue, 0);
-
     Logger::getInstance().log(LogLevel::INFO, "RGB Light setup complete.");
 }
 

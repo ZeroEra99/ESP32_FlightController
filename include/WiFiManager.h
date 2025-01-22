@@ -20,7 +20,7 @@ public:
     static WiFiManager &getInstance(); // Ottiene l'istanza del WiFiManager
 
     /**
-     * @brief Inizializza la connessione WiFi.
+     * @brief Inizializza la connessione WiFi in modo asincrono.
      *
      * @param ssid SSID della rete WiFi.
      * @param password Password della rete WiFi.
@@ -35,18 +35,16 @@ public:
     void discoverServer(const char *serverName);
 
     /**
-     * @brief Verifica se la connessione WiFi è attiva.
-     *
-     * @return true se connesso, false altrimenti.
-     */
-    bool isConnected();
-
-    /**
      * @brief Verifica se il server è attivo.
      *
      * @return true se il server è attivo, false altrimenti.
      */
     bool isServerActive();
+
+    /**
+     * @brief Avvia un task per gestire la connessione WiFi in modo asincrono.
+     */
+    void startConnectionTask();
 
     /**
      * @brief Avvia un task per il controllo dello stato del server.
@@ -83,11 +81,11 @@ private:
     WiFiManager &operator=(const WiFiManager &) = delete; ///< Operatore di assegnamento disabilitato.
 
     /**
-     * @brief Task per il controllo dello stato del server.
+     * @brief Task per la gestione asincrona della connessione WiFi.
      *
      * @param param Puntatore al WiFiManager.
      */
-    static void serverCheckTask(void *param);
+    static void WiFiConnectionTask(void *param);
 
     /**
      * @brief Task per la scoperta del server mDNS.
@@ -96,9 +94,20 @@ private:
      */
     static void serverDiscoveryTask(void *param);
 
-    bool serverSet = false;            ///< Flag per l'impostazione del server.
-    bool serverStatus = false;         ///< Flag per lo stato del server.
-    unsigned long checkInterval = 200; ///< Intervallo di controllo del server in millisecondi.
+    /**
+     * @brief Task per il controllo dello stato del server.
+     *
+     * @param param Puntatore al WiFiManager.
+     */
+    static void serverCheckTask(void *param);
+
+    const char *ssid = nullptr;              ///< SSID della rete WiFi.
+    const char *password = nullptr;          ///< Password della rete WiFi.
+    bool wifiConnected = false;              ///< Stato della connessione WiFi.
+    bool serverSet = false;                  ///< Flag per l'impostazione del server.
+    bool serverStatus = false;               ///< Flag per lo stato del server.
+    unsigned long checkServerInterval = 200; ///< Intervallo di controllo in millisecondi.
+    unsigned long sendInterval = 200;        ///< Intervallo di invio in millisecondi.
 };
 
 #endif // WIFI_MANAGER_H

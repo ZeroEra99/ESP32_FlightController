@@ -34,7 +34,7 @@ void Logger::log(LogLevel level, const std::string &message, bool sendToServer)
     std::lock_guard<std::mutex> lock(mutex);
     std::string formattedLog = formatLog(level, message);
     Serial.println(formattedLog.c_str());
-    if(!sendToServer)
+    if (!sendToServer)
         return;
     if (logBuffer.size() >= maxBufferSize)
     {
@@ -44,8 +44,11 @@ void Logger::log(LogLevel level, const std::string &message, bool sendToServer)
             Logger::getInstance().log(LogLevel::WARNING, "LogBuffer is full. Older logs will be discarded.");
             bufferFull = true;
         }
-    }else{
-        if(bufferFull){
+    }
+    else
+    {
+        if (bufferFull)
+        {
             Logger::getInstance().log(LogLevel::WARNING, "LogBuffer is no longer full.");
             bufferFull = false;
         }
@@ -164,7 +167,7 @@ void Logger::sendDataToServer()
 
     String serverUrl = String("http://") + serverAddress + ":" + String(serverPort) + "/get_data_logs";
 
-    while (!dataBuffer.empty() && WiFi.status() == WL_CONNECTED)
+    while (!dataBuffer.empty() && WiFiManager::getInstance().isServerActive())
     {
         std::vector<std::string> row;
 
