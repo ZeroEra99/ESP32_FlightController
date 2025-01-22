@@ -89,71 +89,101 @@ void Logger::sendLogToServer(const std::string &log)
     const char *serverAddress = wifiManager.serverAddress;
     uint16_t serverPort = wifiManager.serverPort;
 
-    if (!serverAddress || serverPort == 0)
-        return;
-
     String serverUrl = String("http://") + serverAddress + ":" + String(serverPort) + "/receive";
 
-    if (WiFi.status() == WL_CONNECTED)
+    HTTPClient http;
+    http.begin(serverUrl.c_str());
+    http.addHeader("Content-Type", "text/plain");
+
+    int httpResponseCode = http.POST(log.c_str());
+
+    if (httpResponseCode <= 0)
     {
-        HTTPClient http;
-        http.begin(serverUrl.c_str());
-        http.addHeader("Content-Type", "text/plain");
-
-        int httpResponseCode = http.POST(log.c_str());
-
-        if (httpResponseCode <= 0)
-        {
-            Serial.println("Failed to send log to server. HTTP error: " + String(httpResponseCode));
-        }
-
-        http.end();
+        Serial.println("Failed to send log to server. HTTP error: " + String(httpResponseCode));
     }
+
+    http.end();
 }
 
 void Logger::incrementCycle()
 {
     std::lock_guard<std::mutex> lock(mutex);
     currentCycle++;
-    tempDataRow.clear();
-    tempDataRow.push_back(std::to_string(currentCycle));
 }
 
-void Logger::logData(const std::string &varName, double value)
+void Logger::logData(const std::string &varName, double value, int decimalPlaces)
 {
     std::lock_guard<std::mutex> lock(mutex);
-    tempDataRow.push_back(std::to_string(value));
+
+    // Troncamento del valore al numero di cifre decimali specificate
+    double scalingFactor = pow(10, decimalPlaces);
+    value = floor(value * scalingFactor) / scalingFactor;
+
+    // Conversione a stringa
+    std::string valueStr = std::to_string(value);
+
+    // Aggiunta della variabile e del valore alla riga temporanea
+    tempDataRow.push_back(varName);  // Nome variabile
+    tempDataRow.push_back(valueStr); // Valore troncato
 }
 
 void Logger::prepareDataBuffer()
 {
     std::lock_guard<std::mutex> lock(mutex);
-    static bool bufferFull = true;
+
     if (tempDataRow.empty())
     {
         Logger::getInstance().log(LogLevel::ERROR, "No data to log.");
         return;
     }
 
-    if (dataBuffer.size() >= maxBufferSize)
+    static bool bufferFull = false;
+
+    // Se il ciclo è 0, aggiungi i nomi delle variabili
+    if (currentCycle == 0)
     {
-        dataBuffer.pop_front();
-        if (!bufferFull)
+        std::vector<std::string> headerRow;
+        // Aggiungi il timestamp formattato
+        time_t now = time(nullptr);
+        char timestamp[20];
+        strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", localtime(&now));
+        headerRow.push_back(timestamp);
+
+        // Aggiungi i nomi delle variabili (ogni elemento dispari in tempDataRow)
+        for (size_t i = 0; i < tempDataRow.size(); i += 2)
         {
-            Logger::getInstance().log(LogLevel::WARNING, "DataBuffer is full. Older data will be discarded.");
+            headerRow.push_back(tempDataRow[i]);
+        }
+
+        // Aggiungi l'header al buffer
+        if (dataBuffer.size() >= maxBufferSize)
+        {
+            dataBuffer.pop_front();
             bufferFull = true;
         }
+        dataBuffer.push_back(headerRow);
     }
     else
     {
-        if (bufferFull)
+        // Aggiungi i valori delle variabili
+        std::vector<std::string> dataRow;
+        dataRow.push_back(std::to_string(currentCycle)); // Numero ciclo
+        for (size_t i = 1; i < tempDataRow.size(); i += 2)
         {
-            Logger::getInstance().log(LogLevel::WARNING, "DataBuffer is no longer full.");
-            bufferFull = false;
+            dataRow.push_back(tempDataRow[i]); // Valori delle variabili
         }
+
+        // Aggiungi i dati al buffer
+        if (dataBuffer.size() >= maxBufferSize)
+        {
+            dataBuffer.pop_front();
+            bufferFull = true;
+        }
+        dataBuffer.push_back(dataRow);
     }
 
-    dataBuffer.push_back(tempDataRow);
+    // Svuota la riga temporanea
+    tempDataRow.clear();
 }
 
 void Logger::sendDataToServer()
@@ -162,49 +192,45 @@ void Logger::sendDataToServer()
     const char *serverAddress = wifiManager.serverAddress;
     uint16_t serverPort = wifiManager.serverPort;
 
-    if (!serverAddress || serverPort == 0)
-        return;
-
     String serverUrl = String("http://") + serverAddress + ":" + String(serverPort) + "/get_data_logs";
 
-    while (!dataBuffer.empty() && WiFiManager::getInstance().isServerActive())
+    if (dataBuffer.empty())
+        return;
+
+    std::vector<std::string> row;
+
     {
-        std::vector<std::string> row;
-
-        {
-            std::lock_guard<std::mutex> lock(mutex);
-            row = dataBuffer.front();
-        }
-
-        String jsonData = "[";
-        for (size_t i = 0; i < row.size(); ++i)
-        {
-            jsonData += "\"" + String(row[i].c_str()) + "\"";
-            if (i < row.size() - 1)
-                jsonData += ",";
-        }
-        jsonData += "]";
-
-        HTTPClient http;
-        http.begin(serverUrl.c_str());
-        http.addHeader("Content-Type", "application/json");
-
-        int httpResponseCode = http.POST(jsonData);
-
-        if (httpResponseCode > 0)
-        {
-            std::lock_guard<std::mutex> lock(mutex);
-            dataBuffer.pop_front();
-        }
-        else
-        {
-            String response = "Failed to send data logs to server. HTTP error: " + String(httpResponseCode);
-            Logger::getInstance().log(LogLevel::ERROR, response.c_str());
-            break;
-        }
-
-        http.end();
+        std::lock_guard<std::mutex> lock(mutex);
+        row = dataBuffer.front();
     }
+
+    String jsonData = "[";
+    for (size_t i = 0; i < row.size(); ++i)
+    {
+        jsonData += "\"" + String(row[i].c_str()) + "\"";
+        if (i < row.size() - 1)
+            jsonData += ",";
+    }
+    jsonData += "]";
+
+    HTTPClient http;
+    http.begin(serverUrl.c_str());
+    http.addHeader("Content-Type", "application/json");
+
+    int httpResponseCode = http.POST(jsonData);
+
+    if (httpResponseCode > 0)
+    {
+        std::lock_guard<std::mutex> lock(mutex);
+        dataBuffer.pop_front();
+    }
+    else
+    {
+        String response = "Failed to send data logs to server. HTTP error: " + String(httpResponseCode);
+        Logger::getInstance().log(LogLevel::ERROR, response.c_str());
+    }
+
+    http.end();
 }
 
 void Logger::printCurrentCycleData() const

@@ -117,7 +117,7 @@ void Aircraft::update_data_logger()
     // Aggiorna il logger dei dati
     if (imu_read || receiver_read) // Andrà cambiato con && o rivisto
     {
-        //Logger::getInstance().prepareDataBuffer();     // Organizza e salva i dati del ciclo
+        Logger::getInstance().prepareDataBuffer();     // Organizza e salva i dati del ciclo
         //Logger::getInstance().sendDataToServer();      // Invia i dati (se necessario)
         Logger::getInstance().incrementCycle(); // Passa al ciclo successivo
     }

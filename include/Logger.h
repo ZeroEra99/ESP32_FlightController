@@ -37,7 +37,7 @@ private:
     size_t maxBufferSize = 100;        ///< Dimensione massima del buffer dei log.
 
     std::deque<std::vector<std::string>> dataBuffer; ///< Buffer per i dati numerici.
-    size_t maxDataBufferSize = 600;                  ///< Dimensione massima del buffer dei dati.
+    size_t maxDataBufferSize = 2000;                  ///< Dimensione massima del buffer dei dati.
     std::vector<std::string> tempDataRow;            ///< Riga temporanea per i dati del ciclo corrente.
     size_t currentCycle = 0;                         ///< Contatore del ciclo corrente.
     std::string startTimestamp;                      ///< Timestamp di inizio raccolta dati.
@@ -59,7 +59,7 @@ public:
 
     void incrementCycle(); ///< Incrementa il contatore del ciclo e prepara la riga dati.
 
-    void logData(const std::string &varName, double value); ///< Registra un dato numerico.
+    void logData(const std::string &varName, double value, int decimalPlaces = 3); ///< Registra un dato numerico.
 
     void prepareDataBuffer(); ///< Organizza i dati raccolti nel buffer principale.
 
