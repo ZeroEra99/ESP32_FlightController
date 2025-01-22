@@ -87,6 +87,7 @@ def favicon():
     return '', 204
 
 # Endpoint per cancellare i log
+@app.route('/clear_logs', methods=['GET'])
 def clear_logs():
     global display_logs
     display_logs = []
