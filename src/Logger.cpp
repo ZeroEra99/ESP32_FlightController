@@ -28,19 +28,29 @@ void Logger::startLogTask()
     );
 }
 
-void Logger::log(LogLevel level, const std::string &message)
+void Logger::log(LogLevel level, const std::string &message, bool sendToServer)
 {
+    static bool bufferFull = false;
     std::lock_guard<std::mutex> lock(mutex);
     std::string formattedLog = formatLog(level, message);
-    Serial.print(formattedLog.c_str());
-
+    Serial.println(formattedLog.c_str());
+    if(!sendToServer)
+        return;
     if (logBuffer.size() >= maxBufferSize)
     {
         logBuffer.pop_front();
-        Serial.println("\tLog buffer full. Oldest log discarded.");
+        if (!bufferFull)
+        {
+            Logger::getInstance().log(LogLevel::WARNING, "LogBuffer is full. Older logs will be discarded.");
+            bufferFull = true;
+        }
+    }else{
+        if(bufferFull){
+            Logger::getInstance().log(LogLevel::WARNING, "LogBuffer is no longer full.");
+            bufferFull = false;
+        }
     }
     logBuffer.push_back(formattedLog);
-    Serial.println("\tLog queued.");
 }
 
 std::string Logger::formatLog(LogLevel level, const std::string &message) const
@@ -115,21 +125,32 @@ void Logger::logData(const std::string &varName, double value)
 void Logger::prepareDataBuffer()
 {
     std::lock_guard<std::mutex> lock(mutex);
-
+    static bool bufferFull = true;
     if (tempDataRow.empty())
     {
-        Serial.println("TempDataRow is empty, skipping buffer preparation.");
+        Logger::getInstance().log(LogLevel::ERROR, "No data to log.");
         return;
     }
 
     if (dataBuffer.size() >= maxBufferSize)
     {
         dataBuffer.pop_front();
-        Serial.println("DataBuffer full. Oldest entry discarded.");
+        if (!bufferFull)
+        {
+            Logger::getInstance().log(LogLevel::WARNING, "DataBuffer is full. Older data will be discarded.");
+            bufferFull = true;
+        }
+    }
+    else
+    {
+        if (bufferFull)
+        {
+            Logger::getInstance().log(LogLevel::WARNING, "DataBuffer is no longer full.");
+            bufferFull = false;
+        }
     }
 
     dataBuffer.push_back(tempDataRow);
-    Serial.println("Current cycle data added to buffer.");
 }
 
 void Logger::sendDataToServer()
@@ -174,7 +195,8 @@ void Logger::sendDataToServer()
         }
         else
         {
-            Serial.println("Failed to send data logs to server. HTTP error: " + String(httpResponseCode));
+            String response = "Failed to send data logs to server. HTTP error: " + String(httpResponseCode);
+            Logger::getInstance().log(LogLevel::ERROR, response.c_str());
             break;
         }
 
