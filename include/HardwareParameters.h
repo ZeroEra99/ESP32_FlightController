@@ -28,6 +28,8 @@
  */
 #define PWM_MIN 1000 ///< Valore minimo del segnale PWM.
 #define PWM_MAX 2000 ///< Valore massimo del segnale PWM.
+#define PWM_MIN_SERVO 0 ///< Valore minimo del segnale PWM per i servomotori.
+#define PWM_MAX_SERVO 180 ///< Valore massimo del segnale PWM per i servomotori.
 /** @} */
 
 /** @defgroup Servo_Ranges Intervalli Servo

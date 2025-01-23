@@ -8,19 +8,30 @@
 
 #include <ESP32Servo.h>
 
-/**
- * @brief Classe per la gestione di un ESC (Electronic Speed Controller).
- *
- * Questa classe permette di controllare un ESC tramite un segnale PWM.
- * L'ESC è un dispositivo elettronico che controlla la velocità di un motore brushless.
- */
-class ESC
+class Actuator
 {
-private:
-    Servo esc; ///< Oggetto Servo associato all'ESC.
-    int pin;   ///< Pin associato all'ESC.
-
+protected:
+    Servo actuator; ///< Oggetto Servo associato all'attuatore.
+    int pin;        ///< Pin associato all'attuatore.
 public:
+    /**
+     * @brief Costruttore della classe Actuator.
+     *
+     * @param pin Pin associato all'attuatore.
+     */
+    explicit Actuator(int pin);
+
+    /**
+     * @brief Imposta il valore del segnale PWM per l'attuatore.
+     *
+     * @param value Valore del segnale PWM (0-1).
+     */
+    virtual void write(double value) = 0;
+};
+
+class ESC : public Actuator
+{
+    public:
     /**
      * @brief Costruttore della classe ESC.
      *
@@ -31,24 +42,14 @@ public:
     /**
      * @brief Imposta il valore del segnale PWM per l'ESC.
      *
-     * @param value Valore del segnale PWM (0-1).
+     * @param value Valore del segnale PWM.
      */
-    void writeESC(double value);
+    void write(double value) override;
 };
 
-/**
- * @brief Classe per la gestione di un servomotore.
- *
- * Questa classe permette di controllare un servomotore tramite un segnale PWM.
- * Il servomotore è un dispositivo che permette di controllare una superficie di controllo.
- */
-class ServoMotor
+class ServoMotor : public Actuator
 {
-private:
-    Servo servo; ///< Oggetto Servo associato al servomotore.
-    int pin;     ///< Pin associato al servomotore.
-
-public:
+    public:
     /**
      * @brief Costruttore della classe ServoMotor.
      *
@@ -59,9 +60,11 @@ public:
     /**
      * @brief Imposta il valore del segnale PWM per il servomotore.
      *
-     * @param value Valore del segnale PWM (0-1).
+     * @param value Valore del segnale PWM.
      */
-    void writeServo(double value);
+    void write(double value) override;
 };
+
+
 
 #endif // ACTUATOR_H

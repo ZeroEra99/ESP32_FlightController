@@ -106,10 +106,10 @@ void Aircraft::update_leds(ASSIST_MODE assist_mode, CONTROLLER_STATE state)
 void Aircraft::write_actuators()
 {
     // Scrive i valori sugli attuatori
-    servo_x.writeServo(output.x);
-    servo_y.writeServo(output.y);
-    servo_z.writeServo(output.z);
-    esc.writeESC(output.throttle);
+    servo_x.write(output.x);
+    servo_y.write(output.y);
+    servo_z.write(output.z);
+    esc.write(output.throttle);
 }
 
 void Aircraft::update_data_logger()
