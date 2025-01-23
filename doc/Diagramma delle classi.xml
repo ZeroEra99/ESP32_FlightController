@@ -35,10 +35,10 @@
         <Parameter type="int" name="rxPin" />
       </Method>
       <Method name="read">
-        <Parameter type="ReceiverData&" name="data" />
+        <Parameter type="ReceiverData&amp;" name="data" />
       </Method>
       <Method name="logData">
-        <Parameter type="const ReceiverData&" name="data" />
+        <Parameter type="const ReceiverData&amp;" name="data" />
       </Method>
       <Method name="resetBuffer" />
       <Method name="decodeIBusPacket" />
@@ -52,10 +52,10 @@
     </Attributes>
     <Methods>
       <Method name="read">
-        <Parameter type="ImuData&" name="data" />
+        <Parameter type="ImuData&amp;" name="data" />
       </Method>
       <Method name="logData">
-        <Parameter type="const ImuData&" name="data" />
+        <Parameter type="const ImuData&amp;" name="data" />
       </Method>
     </Methods>
   </Class>
@@ -111,10 +111,10 @@
     <Methods>
       <Method name="Aircraft" />
       <Method name="read_imu">
-        <Parameter type="Errors&" name="error" />
+        <Parameter type="Errors&amp;" name="error" />
       </Method>
       <Method name="read_receiver">
-        <Parameter type="Errors&" name="error" />
+        <Parameter type="Errors&amp;" name="error" />
       </Method>
       <Method name="update_leds">
         <Parameter type="ASSIST_MODE" name="assist_mode" />
@@ -155,113 +155,33 @@
     </Attributes>
     <Methods>
       <Method name="FlightController">
-        <Parameter type="Aircraft&" name="aircraft" />
+        <Parameter type="Aircraft&amp;" name="aircraft" />
       </Method>
       <Method name="compute_data">
         <Parameter type="double" name="dt" />
-        <Parameter type="ReceiverData&" name="receiver_data" />
-        <Parameter type="ImuData&" name="imu_data" />
-        <Parameter type="Output&" name="output" />
+        <Parameter type="ReceiverData&amp;" name="receiver_data" />
+        <Parameter type="ImuData&amp;" name="imu_data" />
+        <Parameter type="Output&amp;" name="output" />
       </Method>
       <Method name="control">
         <Parameter type="double" name="dt" />
-        <Parameter type="ImuData&" name="imu_data" />
-        <Parameter type="ReceiverData&" name="receiver_data" />
-        <Parameter type="Output&" name="output" />
+        <Parameter type="ImuData&amp;" name="imu_data" />
+        <Parameter type="ReceiverData&amp;" name="receiver_data" />
+        <Parameter type="Output&amp;" name="output" />
       </Method>
       <Method name="check_errors" />
       <Method name="update_state">
-        <Parameter type="ReceiverData&" name="receiver_data" />
+        <Parameter type="ReceiverData&amp;" name="receiver_data" />
       </Method>
       <Method name="update_modes">
-        <Parameter type="ReceiverData&" name="receiver_data" />
+        <Parameter type="ReceiverData&amp;" name="receiver_data" />
         <Parameter type="bool" name="imuSetupComplete" />
       </Method>
       <Method name="set_output">
-        <Parameter type="Output&" name="output" />
-        <Parameter type="ReceiverData&" name="receiver_data" />
+        <Parameter type="Output&amp;" name="output" />
+        <Parameter type="ReceiverData&amp;" name="receiver_data" />
         <Parameter type="bool" name="imuSetupComplete" />
       </Method>
-    </Methods>
-  </Class>
-
-  <Class name="SystemController">
-    <Attributes>
-      <Attribute type="CONTROLLER_STATE" name="state" />
-      <Attribute type="CONTROLLER_MODE" name="mode" />
-      <Attribute type="ASSIST_MODE" name="assist_mode" />
-      <Attribute type="CALIBRATION_TARGET" name="calibration_target" />
-      <Attribute type="Errors" name="error" />
-      <Attribute type="bool" name="isFailsafeActive" />
-    </Attributes>
-    <Methods>
-      <Method name="SystemController" />
-      <Method name="update_state">
-        <Parameter type="CONTROLLER_STATE" name="newState" />
-      </Method>
-      <Method name="check_errors" />
-      <Method name="resetFailsafe" />
-      <Method name="update_modes">
-        <Parameter type="ReceiverData&" name="receiver_data" />
-        <Parameter type="bool" name="imuSetupComplete" />
-      </Method>
-      <Method name="set_output">
-        <Parameter type="Output&" name="output" />
-        <Parameter type="ReceiverData&" name="receiver_data" />
-        <Parameter type="bool" name="imuSetupComplete" />
-      </Method>
-      <Method name="failSafe" />
-      <Method name="check_disarm_conditions">
-        <Parameter type="ReceiverData&" name="receiver_data" />
-      </Method>
-      <Method name="check_arm_conditions">
-        <Parameter type="ReceiverData&" name="receiver_data" />
-      </Method>
-    </Methods>
-  </Class>
-
-  <Class name="WiFiManager">
-    <Attributes>
-      <Attribute type="String" name="ssid" />
-      <Attribute type="String" name="password" />
-      <Attribute type="bool" name="isConnected" />
-      <Attribute type="String" name="discoveredServer" />
-    </Attributes>
-    <Methods>
-      <Method name="begin">
-        <Parameter type="const char*" name="ssid" />
-        <Parameter type="const char*" name="password" />
-      </Method>
-      <Method name="discoverServer">
-        <Parameter type="const char*" name="serverName" />
-      </Method>
-      <Method name="isServerActive" />
-      <Method name="WiFiConnectionTask">
-        <Parameter type="void*" name="param" />
-      </Method>
-      <Method name="serverDiscoveryTask">
-        <Parameter type="void*" name="param" />
-      </Method>
-      <Method name="serverCheckTask">
-        <Parameter type="void*" name="param" />
-      </Method>
-    </Methods>
-  </Class>
-
-  <Class name="Logger">
-    <Attributes>
-      <Attribute type="String" name="logBuffer" />
-      <Attribute type="String" name="dataBuffer" />
-    </Attributes>
-    <Methods>
-      <Method name="log">
-        <Parameter type="const std::string&" name="message" />
-      </Method>
-      <Method name="sendLogToServer">
-        <Parameter type="const std::string&" name="log" />
-      </Method>
-      <Method name="prepareDataBuffer" />
-      <Method name="sendDataToServer" />
     </Methods>
   </Class>
 </UML>
