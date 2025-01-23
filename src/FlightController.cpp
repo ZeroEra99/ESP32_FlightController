@@ -123,9 +123,10 @@ void FlightController::compute_attitude_pid(const Quaternion &errors, const PID 
                                             Output &output)
 {
     // Calcola gli output PID per l'attitudine
-    output.x = pid_attitude_x.pid(errors.x, dt, pid_offsets.kp, pid_offsets.ki, pid_offsets.kd);
-    output.y = pid_attitude_y.pid(errors.y, dt, pid_offsets.kp, pid_offsets.ki, pid_offsets.kd);
-    output.z = pid_attitude_z.pid(errors.z, dt, pid_offsets.kp, pid_offsets.ki, pid_offsets.kd);
+    float desired_gyro_x = pid_attitude_x.pid(errors.x, dt, pid_offsets.kp, pid_offsets.ki, pid_offsets.kd);
+    float desired_gyro_y = pid_attitude_y.pid(errors.y, dt, pid_offsets.kp, pid_offsets.ki, pid_offsets.kd);
+    float desired_gyro_z = pid_attitude_z.pid(errors.z, dt, pid_offsets.kp, pid_offsets.ki, pid_offsets.kd);
+    compute_gyro_pid({desired_gyro_x, desired_gyro_y, desired_gyro_z}, pid_offsets, dt, output);
 }
 
 void FlightController::logData(const Output &output)
@@ -136,9 +137,12 @@ void FlightController::control(double dt, ImuData &imu_data, ReceiverData &recei
                                Output &output, ASSIST_MODE assist_mode,
                                CONTROLLER_STATE state, CALIBRATION_TARGET calibration_target)
 {
-    if (assist_mode == ASSIST_MODE::MANUAL || error.IMU_ERROR)
+    if (assist_mode == ASSIST_MODE::MANUAL || error.IMU_ERROR){
+        output.x = receiver_data.x;
+        output.y = receiver_data.y;
+        output.z = receiver_data.z;
         return;
-
+}
     if (assist_mode == ASSIST_MODE::GYRO_STABILIZED)
     {
         compute_gyro_pid(error_gyro, pid_tuning_offset_gyro, dt, output);

@@ -6,7 +6,7 @@
 #ifndef FLIGHT_CONTROLLER_H
 #define FLIGHT_CONTROLLER_H
 
-#include "PIDcontrol.h"
+#include "PIDcontroller.h"
 #include "DataStructures.h"
 #include "FlightControllerConfig.h"
 
@@ -59,12 +59,12 @@ private:
     void compute_attitude_pid(const Quaternion &errors, const PID &pid_offsets, double dt, Output &output);
 
     // Componenti logiche
-    PIDcontrol pid_attitude_x; ///< PID per il controllo dell'assetto sull'asse X (rollio).
-    PIDcontrol pid_attitude_y; ///< PID per il controllo dell'assetto sull'asse Y (beccheggio).
-    PIDcontrol pid_attitude_z; ///< PID per il controllo dell'assetto sull'asse Z (imbardata).
-    PIDcontrol pid_gyro_x;     ///< PID per il controllo della velocità angolare sull'asse X (rollio).
-    PIDcontrol pid_gyro_y;     ///< PID per il controllo della velocità angolare sull'asse Y (beccheggio).
-    PIDcontrol pid_gyro_z;     ///< PID per il controllo della velocità angolare sull'asse Z (imbardata).
+    PIDcontroller pid_attitude_x; ///< PID per il controllo dell'assetto sull'asse X (rollio).
+    PIDcontroller pid_attitude_y; ///< PID per il controllo dell'assetto sull'asse Y (beccheggio).
+    PIDcontroller pid_attitude_z; ///< PID per il controllo dell'assetto sull'asse Z (imbardata).
+    PIDcontroller pid_gyro_x;     ///< PID per il controllo della velocità angolare sull'asse X (rollio).
+    PIDcontroller pid_gyro_y;     ///< PID per il controllo della velocità angolare sull'asse Y (beccheggio).
+    PIDcontroller pid_gyro_z;     ///< PID per il controllo della velocità angolare sull'asse Z (imbardata).
 
     // Dati del controller di volo
     Euler error_gyro;               ///< Errori delle velocità angolari per ciascun asse (X, Y, Z).

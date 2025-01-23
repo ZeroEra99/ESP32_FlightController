@@ -5,21 +5,12 @@
 #ifndef LOGGER_H
 #define LOGGER_H
 
+#include "DataStructures.h"
 #include <string>
 #include <vector>
 #include <mutex>
 #include <deque>
 #include <iostream>
-
-/**
- * @brief Enumerazione per i livelli di log disponibili.
- */
-enum class LogLevel
-{
-    ERROR,   ///< Errore critico.
-    WARNING, ///< Avvertimento.
-    INFO,    ///< Informazione.
-};
 
 /**
  * @brief Classe per la gestione dei log di sistema e dei dati numerici.
