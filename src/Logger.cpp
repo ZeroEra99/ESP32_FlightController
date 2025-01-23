@@ -89,7 +89,7 @@ void Logger::sendLogToServer(const std::string &log)
     const char *serverAddress = wifiManager.serverAddress;
     uint16_t serverPort = wifiManager.serverPort;
 
-    String serverUrl = String("http://") + serverAddress + ":" + String(serverPort) + "/receive";
+    String serverUrl = String("http://") + serverAddress + ":" + String(serverPort) + "/receive_logs";
 
     HTTPClient http;
     http.begin(serverUrl.c_str());
@@ -192,7 +192,7 @@ void Logger::sendDataToServer()
     const char *serverAddress = wifiManager.serverAddress;
     uint16_t serverPort = wifiManager.serverPort;
 
-    String serverUrl = String("http://") + serverAddress + ":" + String(serverPort) + "/get_data_logs";
+    String serverUrl = String("http://") + serverAddress + ":" + String(serverPort) + "/receive_data";
 
     if (dataBuffer.empty())
         return;
