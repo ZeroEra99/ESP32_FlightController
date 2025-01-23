@@ -1,0 +1,55 @@
+@startuml esp32_asynctask_flowchart
+
+title ESP32 Asyncronous Tasks Flowchart
+
+start
+
+group WiFiManager Tasks
+  :Verifica stato del WiFi (WiFiConnectionTask);
+  if (WiFi disconnesso?) then (Si)
+    :Tentativo di riconnessione WiFi;
+    if (Riconnessione riuscita?) then (Si)
+      :Sincronizzazione orario NTP;
+      :Conferma validita' al sistema;
+    else (No)
+      :WiFi ancora disconnesso;
+    endif
+  endif
+
+  if (WiFi connessa e IP non registrato?) then (Si)
+    :Discovery del server mDNS (serverDiscoveryTask);
+    if (Server trovato?) then (Si)
+      :Aggiorna stato server;
+    else (No)
+      :Server non trovato;
+    endif
+  endif
+
+  if (IP registrato?) then (Si)
+    :Verifica stato del server (serverCheckTask);
+    if (Server attivo?) then (Si)
+      :Aggiorna stato server attivo;
+    else (No)
+      :Registra errore server nel Logger;
+    endif
+  endif
+end group
+
+group Logger Task
+  :Verifica se il server e' attivo (logTask);
+  if (Server attivo?) then (Si)
+    :Estrai log dal buffer;
+    :Invia log al server;
+    if (Invio riuscito?) then (Si)
+      :Rimuovi elemento inviato dal buffer;
+    else (No)
+      :Mantieni log nel buffer;
+    endif
+  else (No)
+    :Nessun invio di log;
+  endif
+end group
+
+stop
+
+@enduml
