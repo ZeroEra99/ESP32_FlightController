@@ -21,38 +21,24 @@ int digital_to_pwm(double value, double min_digital, double max_digital, int min
     return clamp(static_cast<int>(((value - min_digital) * (max_analog - min_analog) / (max_digital - min_digital)) + min_analog), min_analog, max_analog);
 }
 
-Actuator::Actuator(int pin)
-    : pin(pin)
+Actuator::Actuator(int pin, int pwm_min, int pwm_max, int pwm_null, double digital_min, double digital_max) : pin(pin)
 {
     Logger::getInstance().log(LogLevel::INFO, "Actuator setup started.");
-}
 
-ESC::ESC(int pin)
-    : Actuator(pin)
-{
-    actuator.attach(pin, PWM_MIN, PWM_MAX);
-    actuator.writeMicroseconds(PWM_MIN);
-    Logger::getInstance().log(LogLevel::INFO, "ESC setup complete.");
-}
+    this->pwm_min = pwm_min;
+    this->pwm_max = pwm_max;
+    this->pwm_null = pwm_null;
+    this->digital_min = digital_min;
+    this->digital_max = digital_max;
 
-void ESC::write(double value)
-{
-    int pwm_value = digital_to_pwm(value, THROTTLE_MIN, THROTTLE_MAX, PWM_MIN, PWM_MAX);
-    actuator.writeMicroseconds(pwm_value);
-}
-
-ServoMotor::ServoMotor(int pin) : Actuator(pin)
-{
     actuator.attach(pin);
+    actuator.writeMicroseconds(pwm_null);
 
-    int mid_pwm = digital_to_pwm(0, SERVO_MIN_ANGLE, SERVO_MAX_ANGLE, PWM_MIN_SERVO, PWM_MAX_SERVO);
-    actuator.write(mid_pwm);
-
-    Logger::getInstance().log(LogLevel::INFO, "Servo setup complete.");
+    Logger::getInstance().log(LogLevel::INFO, "Actuator setup complete.");
 }
 
-void ServoMotor::write(double value)
+void Actuator::write(double value)
 {
-    int pwm_value = digital_to_pwm(value, SERVO_MIN_ANGLE, SERVO_MAX_ANGLE, PWM_MIN_SERVO, PWM_MAX_SERVO);
-    actuator.write(pwm_value);
+    int pwm_value = digital_to_pwm(value, digital_min, digital_max, pwm_min, pwm_max);
+    actuator.writeMicroseconds(pwm_value);
 }

@@ -5,10 +5,10 @@
 bool imu_read = false, receiver_read = false;
 
 // Costruttore della classe Aircraft
-Aircraft::Aircraft() : esc(ESC_PIN),
-                       servo_x(SERVO_PIN_X),
-                       servo_y(SERVO_PIN_Y),
-                       servo_z(SERVO_PIN_Z),
+Aircraft::Aircraft() : esc(ESC_PIN, PWM_MIN, PWM_MAX, PWM_MIN, THROTTLE_MIN, THROTTLE_MAX),
+                       servo_x(SERVO_PIN_X, PWM_MIN_SERVO, PWM_MAX_SERVO, PWM_NEUTRAL_SERVO, ROLL_MIN, ROLL_MAX),
+                       servo_y(SERVO_PIN_Y, PWM_MIN_SERVO, PWM_MAX_SERVO, PWM_NEUTRAL_SERVO, PITCH_MIN, PITCH_MAX),
+                       servo_z(SERVO_PIN_Z, PWM_MIN_SERVO, PWM_MAX_SERVO, PWM_NEUTRAL_SERVO, VRA_MIN, VRA_MAX),
                        imu(),
                        receiver(IBUS_RX_PIN),
                        led_red(LED_PIN_RED),
