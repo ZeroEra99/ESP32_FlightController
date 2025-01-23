@@ -1,4 +1,6 @@
-@startuml class_uml
+@startuml esp32_class_diagram
+
+title ESP32 ULM Class Diagram 
 
 class Actuator {
     - int pin
@@ -54,9 +56,6 @@ class RGB_LED {
 }
 
 class Aircraft {
-    - Receiver receiver
-    - RGB_LED led_rgb
-    - IMU imu
     - ImuData imu_data
     - ReceiverData receiver_data
     - Output output

@@ -1,6 +1,6 @@
 @startuml esp32_loop_flowchart
 
-title ESP32 Loop() Flowchart
+title ESP32 Main Loop Flowchart
 
 start
 :Leggi dati dall'IMU;

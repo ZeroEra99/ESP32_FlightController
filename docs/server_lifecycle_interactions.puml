@@ -1,4 +1,4 @@
-@startuml
+@startuml server_lifecycle_interactions
 
 title Server Lifecycle and Interactions
 

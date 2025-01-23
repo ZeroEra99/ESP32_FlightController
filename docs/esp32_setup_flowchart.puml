@@ -1,6 +1,6 @@
 @startuml esp32_setup_flowchart
 
-title ESP32 Setup() Flowchart
+title ESP32 Main Setup Flowchart
 
 start
 :Inizializzazione della comunicazione seriale;
