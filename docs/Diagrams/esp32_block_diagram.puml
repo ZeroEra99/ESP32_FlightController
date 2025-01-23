@@ -1,0 +1,56 @@
+@startuml esp32_block_diagram
+
+package "Input" {
+  [IMU] : Sensore inerziale
+  [Receiver] : Riceve input remoti
+  [IMU] --> [System Controller] : Dati di orientamento
+  [IMU] --> [Flight Controller] : Dati inerziali per stabilizzazione
+  [Receiver] --> [System Controller] : Comandi utente
+  [Receiver] --> [Flight Controller] : Input per controllo attitudine
+}
+
+package "Elaborazione" {
+  [System Controller] : Supervisione del sistema
+  [Flight Controller] : Controllo volo e stabilizzazione
+  [System Controller] --> [Flight Controller] : Coordina modalità e input
+  note right of [System Controller]
+    Verifica errori
+    Aggiorna stato e modalità operative
+  end note
+  [Flight Controller] --> [Actuator] : Calcoli PID per attuatori
+  note right of [Flight Controller]
+    Stabilizzazione giroscopica
+    Controllo attitudine
+    Calcolo offset PID
+  end note
+}
+
+package "Output" {
+  [Actuator] : Controlla motori e servocomandi
+  [LED] : Indicazione stato
+  [RGB_LED] : Indicazione modalità
+  [Actuator] <-- [Flight Controller] : Comandi calcolati
+  [LED] <-- [System Controller] : Stato visivo
+  [RGB_LED] <-- [System Controller] : Modalità visiva
+}
+
+package "Logging" {
+  [Logger] : Registra dati e log
+  [Logger] --> [WiFiManager] : Invio log e dati
+  note right of [Logger]
+    Formatta messaggi di log
+    Prepara dati per analisi
+  end note
+}
+
+package "Comunicazione" {
+  [WiFiManager] : Gestisce connessioni
+  [WiFiManager] --> "Server Remoto" : Scambio dati
+  note right of [WiFiManager]
+    Connessione WiFi
+    Scoperta server (mDNS)
+    Comunicazione HTTP
+  end note
+}
+
+@enduml

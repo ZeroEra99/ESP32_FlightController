@@ -1,0 +1,77 @@
+@startuml system_block_diagram
+
+title System Block Diagram
+
+package "ESP32" {
+    rectangle "Trasmissione Log" as ESP32_Log
+    note right of ESP32_Log
+        Raccolta e invio dei log generati dal sistema
+    end note
+
+    rectangle "Gestione Connessione" as ESP32_Connection
+    note right of ESP32_Connection
+        - Gestione Connessione WiFi
+        - Discovery del server
+        - Verifica stato del server
+    end note
+
+    rectangle "Trasmissione Dati Numerici" as ESP32_Data
+    note right of ESP32_Data
+        Raccolta e invio dei dati numerici dai sensori
+    end note
+
+    ESP32_Log -down[hidden]-> ESP32_Connection
+    ESP32_Connection -down[hidden]-> ESP32_Data
+}
+
+
+package "Server + Server Launcher" {
+    rectangle "API Principali" as Server_API
+    note left of Server_API
+        - [POST /receive_logs]: Ricezione log
+        - [POST /receive_data]: Ricezione dati numerici
+        - [GET /get_logs]: Restituzione log
+        - [GET /get_data]: Restituzione dati
+        - [GET /display_logs]: Pagina HTML per visualizzare log
+        - [GET /clear_*]: Cancellazione log e dati
+        - [POST /shutdown]: Arresto del server
+    end note
+
+    rectangle "mDNS Service" as mDNS
+    note top of mDNS
+        Annuncio del server sulla rete locale tramite mDNS
+    end note
+
+    rectangle "Gestione Buffer" as Server_Buffer
+    note top of Server_Buffer
+        Buffer utilizzati per salvare log (server_logs) e dati numerici (server_data)
+    end note
+
+    Server_API --right-> Server_Buffer : Interazioni con i buffer
+    Server_API --down-> mDNS : Avvio del servizio mDNS
+}
+
+rectangle "Utente" as User
+note right of User
+    - Visualizza log e dati numerici
+    - Invia comandi amministrativi al server
+end note
+
+cloud "Rete Locale" as Network
+note bottom of Network
+    Media la comunicazione tra ESP32,
+    Server, e Utente tramite HTTP e mDNS
+end note
+
+ESP32_Log --> Network : POST log
+ESP32_Data --> Network : POST dati numerici
+ESP32_Connection --> Network : Connessione WiFi e discovery
+
+Network -up--> Server_API : Richieste HTTP
+Server_API --> Network : Risposte dati e pagine
+User --> Network : GET pagine e dati
+
+Network --> User : Risposte dati e pagine
+mDNS -down-> Network : Annuncio del Server
+
+@enduml
