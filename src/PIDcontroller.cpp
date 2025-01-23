@@ -1,8 +1,8 @@
-#include "PIDcontrol.h"
+#include "PIDcontroller.h"
 #include "Logger.h"
 #include <Arduino.h>
 
-PIDcontrol::PIDcontrol(double kp, double ki, double kd, double maxIntegral) : kp(kp), ki(ki), kd(kd), maxIntegral(maxIntegral)
+PIDcontroller::PIDcontroller(double kp, double ki, double kd, double maxIntegral) : kp(kp), ki(ki), kd(kd), maxIntegral(maxIntegral)
 {
     // Inizializza i parametri del PID
     integral = 0;  ///< Inizializza il valore integrale accumulato.
@@ -10,7 +10,7 @@ PIDcontrol::PIDcontrol(double kp, double ki, double kd, double maxIntegral) : kp
     Logger::getInstance().log(LogLevel::INFO, "PID controller initialized.");
 }
 
-double PIDcontrol::pid(double error, double dt, double kp_offset, double ki_offset, double kd_offset)
+double PIDcontroller::pid(double error, double dt, double kp_offset, double ki_offset, double kd_offset)
 {
     // Calcolo del termine integrale con limitazione
     integral += error * dt;

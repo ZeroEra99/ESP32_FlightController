@@ -77,6 +77,16 @@ enum class ASSIST_MODE
     ATTITUDE_CONTROL = 2, ///< Controllo dell'attitudine.
 };
 
+/**
+ * @brief Enumerazione per i livelli di log disponibili.
+ */
+enum class LogLevel
+{
+    ERROR,   ///< Errore critico.
+    WARNING, ///< Avvertimento.
+    INFO,    ///< Informazione.
+};
+
 /** @} */
 
 /** @defgroup Structures Strutture

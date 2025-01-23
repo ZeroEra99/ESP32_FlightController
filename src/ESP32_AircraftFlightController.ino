@@ -6,7 +6,7 @@
 #include "WiFiManager.h"
 
 // Credenziali della rete Wi-Fi
-bool usaReteCasa = false;               ///< Flag per l'utilizzo della rete Wi-Fi di casa
+bool usaReteCasa = true;                ///< Flag per l'utilizzo della rete Wi-Fi di casa
 const char *ssidCasa = "TIM-19028281";  ///< SSID della rete Wi-Fi
 const char *passwordCasa = "casa12345"; ///< Password della rete Wi-Fi
 const char *ssidTelefono = "HONOR200";
@@ -19,7 +19,7 @@ const char *serverName = "Fede"; ///< Nome del server mDNS
 Aircraft *aircraft = nullptr;
 FlightController *flightController = nullptr;
 
-SystemController controller = SystemController();
+SystemController systemController = SystemController();
 
 static unsigned long tPrev = 0;               ///< Timestamp dell'ultimo ciclo in millisecondi.
 static const unsigned long loopInterval = 10; ///< Intervallo del loop in millisecondi (100 Hz).
@@ -54,22 +54,22 @@ void loop()
         tPrev = t;                        // Aggiorna il timestamp precedente
 
         // Aggiorna i dati del sistema
-        aircraft->read_imu(controller.error);
-        aircraft->read_receiver(controller.error);
+        aircraft->read_imu(systemController.error);
+        aircraft->read_receiver(systemController.error);
 
         // Aggiorna lo stato del sistema
-        controller.update_state(aircraft->receiver_data);
-        controller.update_modes(aircraft->receiver_data, aircraft->imu.isSetupComplete);
-        controller.check_errors();
+        systemController.update_state(aircraft->receiver_data);
+        systemController.update_modes(aircraft->receiver_data, aircraft->imu.isSetupComplete);
+        systemController.check_errors();
 
         // Calcola e applica il controllo
-        flightController->compute_data(dt, aircraft->receiver_data, aircraft->imu_data, aircraft->output, controller.assist_mode, controller.state, controller.error, controller.controller_mode);
-        flightController->control(dt, aircraft->imu_data, aircraft->receiver_data, aircraft->output, controller.assist_mode, controller.state, controller.calibration_target);
-        controller.set_output(aircraft->output, aircraft->receiver_data, aircraft->imu.isSetupComplete);
+        flightController->compute_data(dt, aircraft->receiver_data, aircraft->imu_data, aircraft->output, systemController.assist_mode, systemController.state, systemController.error, systemController.controller_mode);
+        flightController->control(dt, aircraft->imu_data, aircraft->receiver_data, aircraft->output, systemController.assist_mode, systemController.state, systemController.calibration_target);
+        systemController.set_output(aircraft->output, aircraft->receiver_data, aircraft->imu.isSetupComplete);
 
         // Aggiorna i componenti hardware
+        aircraft->update_leds(systemController.assist_mode, systemController.state);
         aircraft->write_actuators();
-        aircraft->update_leds(controller.assist_mode, controller.state);
 
         // Aggiorna il logger
         aircraft->update_data_logger();

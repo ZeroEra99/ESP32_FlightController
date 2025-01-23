@@ -1,13 +1,13 @@
 /**
- * @file PIDcontrol.h
+ * @file PIDcontroller.h
  * @brief Dichiarazione della classe PIDcontrol per la gestione del controllo PID.
  * 
  * Questa classe implementa un controllore PID con supporto per limiti dell'integrale
  * e offset dinamici per il tuning in tempo reale.
  */
 
-#ifndef PID_CONTROL_H
-#define PID_CONTROL_H
+#ifndef PID_CONTROLLER_H
+#define PID_CONTROLLER_H
 
 /**
  * @brief Classe per il controllo PID.
@@ -15,7 +15,7 @@
  * Fornisce un metodo per calcolare il valore di controllo PID in base agli errori
  * e ai guadagni proporzionali, integrali e derivativi.
  */
-class PIDcontrol
+class PIDcontroller
 {
 private:
     double kp;          ///< Guadagno proporzionale.
@@ -35,7 +35,7 @@ public:
      * @param kd Guadagno derivativo iniziale.
      * @param maxIntegral Limite massimo per il valore integrale.
      */
-    PIDcontrol(double kp, double ki, double kd, double maxIntegral);
+    PIDcontroller(double kp, double ki, double kd, double maxIntegral);
 
     /**
      * @brief Calcola il valore di controllo PID.
