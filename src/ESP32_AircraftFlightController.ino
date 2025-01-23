@@ -1,69 +1,77 @@
-/**
- * @file ESP32_AircraftFlightController.ino
- * @brief Programma principale per il controllo del volo dell'aereo basato su ESP32.
- * 
- * Questo file gestisce il ciclo principale del sistema, integrando letture dei sensori,
- * controllo degli attuatori, logging e gestione dell'Access Point Wi-Fi.
- */
-
 #include <Arduino.h>
-#include "SystemController.h"
-#include "WiFiManager.h"
 #include "Aircraft.h"
-#include "DebugLogger.h"
+#include "SystemController.h"
+#include "FlightController.h"
+#include "Logger.h"
+#include "WiFiManager.h"
 
-// Configurazione dell'Access Point Wi-Fi
-const char *ssid = "ESP32_AP";
+// Credenziali della rete Wi-Fi
+bool usaReteCasa = true;                ///< Flag per l'utilizzo della rete Wi-Fi di casa
+const char *ssidCasa = "TIM-19028281";  ///< SSID della rete Wi-Fi
+const char *passwordCasa = "casa12345"; ///< Password della rete Wi-Fi
+const char *ssidTelefono = "HONOR200";
+const char *passwordTelefono = "moltobella";
+const char *ssid = usaReteCasa ? ssidCasa : ssidTelefono;             ///< SSID della rete Wi-Fi
+const char *password = usaReteCasa ? passwordCasa : passwordTelefono; ///< Password della rete Wi-Fi
 
-// Inizializzazione degli oggetti principali
-Aircraft aircraft;
-SystemController systemController;
-FlightController flightController(aircraft.receiver_data, aircraft.imu_data, aircraft.output);
-WiFiManager wifiManager(ssid, "password");
-DebugLogger *logger = DebugLogger::getInstance();
+const char *serverName = "Fede"; ///< Nome del server mDNS
 
-static unsigned long tPrev = 0; ///< Timestamp dell'ultimo ciclo in millisecondi.
+Aircraft *aircraft = nullptr;
+FlightController *flightController = nullptr;
+
+SystemController systemController = SystemController();
+
+static unsigned long tPrev = 0;               ///< Timestamp dell'ultimo ciclo in millisecondi.
+static const unsigned long loopInterval = 10; ///< Intervallo del loop in millisecondi (100 Hz).
 
 void setup()
 {
-    Serial.begin(115200); // Configura la porta seriale a 115200 baud
+    // Inizializzazione del monitor seriale
+    Serial.begin(115200);
 
-    // Log iniziale per indicare l'avvio del sistema
-    logger->log("Flight controller started.", LogLevel::INFO);
+    // Inizializzazione del logger
+    Logger::getInstance().startLogTask();
+
+    // Inizializzazione delle connessioni
+    WiFiManager::getInstance().begin(ssid, password);
+    WiFiManager::getInstance().startConnectionTask();                // Avvia il task di connessione
+    WiFiManager::getInstance().startServerDiscoveryTask(serverName); // Avvia il task di scoperta del server
+    WiFiManager::getInstance().startServerCheckTask();               // Avvia il task di controllo dello stato del server
+
+    // Inizializzazione del sistema di controllo
+    aircraft = new Aircraft();
+    flightController = new FlightController(aircraft->receiver_data, aircraft->imu_data, aircraft->output);
+
+    Logger::getInstance().log(LogLevel::INFO, "Setup complete.");
 }
 
 void loop()
 {
-    unsigned long t = millis();       // Ottieni il timestamp attuale
-    double dt = (t - tPrev) / 1000.0; // Calcola l'intervallo di tempo in secondi
-    tPrev = t;                        // Aggiorna il timestamp precedente
+    unsigned long t = millis();    // Ottieni il timestamp attuale
+    if (t - tPrev >= loopInterval) // Verifica se è passato l'intervallo necessario
+    {
+        double dt = (t - tPrev) / 1000.0; // Calcola l'intervallo di tempo in secondi
+        tPrev = t;                        // Aggiorna il timestamp precedente
 
-    // Lettura dei sensori di bordo
-    aircraft.read_imu(systemController.error);
-    aircraft.read_receiver(systemController.error);
+        // Aggiorna i dati del sistema
+        aircraft->read_imu(systemController.error);
+        aircraft->read_receiver(systemController.error);
 
-    // Verifica degli errori e aggiornamento delle modalità operative
-    systemController.check_errors();
-    systemController.update_modes(aircraft.receiver_data);
+        // Aggiorna lo stato del sistema
+        systemController.update_state(aircraft->receiver_data);
+        systemController.update_modes(aircraft->receiver_data, aircraft->imu.isSetupComplete);
+        systemController.check_errors();
 
-    // Aggiorna lo stato dei LED in base alle modalità operative e agli errori
-    aircraft.update_leds(systemController.assist_mode, systemController.state, systemController.error);
+        // Calcola e applica il controllo
+        flightController->compute_data(dt, aircraft->receiver_data, aircraft->imu_data, aircraft->output, systemController.assist_mode, systemController.state, systemController.error, systemController.controller_mode);
+        flightController->control(dt, aircraft->imu_data, aircraft->receiver_data, aircraft->output, systemController.assist_mode, systemController.state, systemController.calibration_target);
+        systemController.set_output(aircraft->output, aircraft->receiver_data, aircraft->imu.isSetupComplete);
 
-    // Esegue il controllo di volo basato sui PID
-    flightController.control(dt, aircraft.imu_data, aircraft.receiver_data, aircraft.output,
-                             systemController.assist_mode, systemController.state, systemController.calibration_target);
+        // Aggiorna i componenti hardware
+        aircraft->update_leds(systemController.assist_mode, systemController.state);
+        aircraft->write_actuators();
 
-    // Aggiorna gli attuatori con i valori calcolati
-    systemController.set_output(aircraft.output, aircraft.receiver_data);
-    aircraft.write_actuators();
-
-    // Stampa i log per il monitoraggio remoto se il sistema è armato
-    if (systemController.state != CONTROLLER_STATE::DISARMED)
-        logger->printFormattedLogs();
-
-    // Gestisce l'Access Point in base allo stato del sistema
-    wifiManager.manageAccessPoint(systemController.state == CONTROLLER_STATE::DISARMED);
-
-    // Incrementa il contatore dei cicli di log
-    logger->incrementCycleCount();
+        // Aggiorna il logger
+        aircraft->update_data_logger();
+    }
 }

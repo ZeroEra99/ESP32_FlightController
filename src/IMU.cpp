@@ -1,11 +1,11 @@
 #include "IMU.h"
-#include "DebugLogger.h"
+#include "Logger.h"
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BNO055.h>
 #include <Arduino.h>
 
 // Inizializzazione dell'oggetto sensore BNO055
-Adafruit_BNO055 bno055 = Adafruit_BNO055(55, 0x29);
+Adafruit_BNO055 bno055 = Adafruit_BNO055(55, 0x28, &Wire);
 
 uint16_t BNO055_SAMPLERATE_DELAY_MS = 10;                                          ///< Frequenza di campionamento in millisecondi.
 const double ACCEL_VEL_TRANSITION = (double)(BNO055_SAMPLERATE_DELAY_MS) / 1000.0; ///< Fattore per velocità da accelerazione.
@@ -14,49 +14,40 @@ const double DEG_2_RAD = 0.01745329251; ///< Conversione da gradi a radianti.
 
 IMU::IMU()
 {
-    DebugLogger::getInstance()->log("IMU setup starting.", LogLevel::DEBUG);
+    Serial.println("IMU setup starting.");
+    Logger::getInstance().log(LogLevel::INFO, "IMU setup starting.");
+
     if (!bno055.begin())
     {
-        DebugLogger::getInstance()->log("IMU setup failed!", LogLevel::ERROR);
-        while (1)
-            ; // Entra in loop infinito se l'inizializzazione fallisce.
+        Logger::getInstance().log(LogLevel::ERROR, "IMU setup failed!");
+
+        // while (1)
+        //; // Entra in loop infinito se l'inizializzazione fallisce.
+        Logger::getInstance().log(LogLevel::WARNING, "Continuing without IMU.");
+        return;
     }
-    DebugLogger::getInstance()->log("IMU setup complete.", LogLevel::DEBUG);
+    bno055.setExtCrystalUse(true);
+
+    isSetupComplete = true;
+    Logger::getInstance().log(LogLevel::INFO, "IMU setup complete.");
 }
 
 void IMU::logData(const ImuData &data)
 {
-    DebugLogger *logger = DebugLogger::getInstance();
+    Logger::getInstance().logData("G_X", data.gyro.x);
+    Logger::getInstance().logData("G_Y", data.gyro.y);
+    Logger::getInstance().logData("G_Z", data.gyro.z);
 
-    // Gyroscope
-    logger->log("G_X", LogLevel::DATA, false);
-    logger->log(data.gyro.x, LogLevel::DATA, false);
-    logger->log("G_Y", LogLevel::DATA, false);
-    logger->log(data.gyro.y, LogLevel::DATA, false);
-    logger->log("G_Z", LogLevel::DATA, false);
-    logger->log(data.gyro.z, LogLevel::DATA);
+    Logger::getInstance().logData("Ac_X", data.accel.x);
+    Logger::getInstance().logData("Ac_Y", data.accel.y);
+    Logger::getInstance().logData("Ac_Z", data.accel.z);
 
-    // Accelerometer
-    logger->log("Ac_X", LogLevel::DATA, false);
-    logger->log(data.accel.x, LogLevel::DATA, false);
-    logger->log("Ac_Y", LogLevel::DATA, false);
-    logger->log(data.accel.y, LogLevel::DATA, false);
-    logger->log("Ac_Z", LogLevel::DATA, false);
-    logger->log(data.accel.z, LogLevel::DATA, false);
+    Logger::getInstance().logData("Q_W", data.quat.w);
+    Logger::getInstance().logData("Q_X", data.quat.x);
+    Logger::getInstance().logData("Q_Y", data.quat.y);
+    Logger::getInstance().logData("Q_Z", data.quat.z);
 
-    // Quaternion
-    logger->log("Q_W", LogLevel::DATA, false);
-    logger->log(data.quat.w, LogLevel::DATA, false);
-    logger->log("Q_X", LogLevel::DATA, false);
-    logger->log(data.quat.x, LogLevel::DATA, false);
-    logger->log("Q_Y", LogLevel::DATA, false);
-    logger->log(data.quat.y, LogLevel::DATA, false);
-    logger->log("Q_Z", LogLevel::DATA, false);
-    logger->log(data.quat.z, LogLevel::DATA, false);
-
-    // Linear velocity
-    logger->log("V", LogLevel::DATA, false);
-    logger->log(data.vel, LogLevel::DATA, false);
+    Logger::getInstance().logData("V", data.vel);
 }
 
 bool IMU::read(ImuData &data)

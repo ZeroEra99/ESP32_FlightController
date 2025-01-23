@@ -1,6 +1,7 @@
 #include "FlightController.h"
 #include "Quaternions.h"
-#include "DebugLogger.h"
+#include "Logger.h"
+#include <Arduino.h>
 
 FlightController::FlightController(ReceiverData &receiver_data, ImuData &imu_data, Output &output)
     : pid_attitude_x(KP_ATTITUDE_X, KI_ATTITUDE_X, KD_ATTITUDE_X, MAX_INTEGRAL_ATTITUDE),
@@ -17,7 +18,7 @@ FlightController::FlightController(ReceiverData &receiver_data, ImuData &imu_dat
     pid_tuning_offset_gyro = {0, 0, 0, 0};
     pid_tuning_offset_attitude = {0, 0, 0, 0};
     error = {0};
-    DebugLogger::getInstance()->log("Flight controller initialized.", LogLevel::DEBUG);
+    Logger::getInstance().log(LogLevel::INFO, "Flight controller initialized.");
 }
 
 void FlightController::compute_pid_offset(ASSIST_MODE assist_mode, CONTROLLER_MODE controller_mode, ReceiverData &receiver_data)
@@ -40,19 +41,19 @@ void FlightController::compute_pid_offset(ASSIST_MODE assist_mode, CONTROLLER_MO
         if (target_pid->kp == receiver_data.swb)
             return;
         target_pid->kp = receiver_data.swb;
-        DebugLogger::getInstance()->log("Kp updated", LogLevel::DEBUG);
+        Logger::getInstance().log(LogLevel::INFO, "Kp updated");
         break;
     case CONTROLLER_MODE::KI_CALIBRATION:
         if (target_pid->ki == receiver_data.swb)
             return;
         target_pid->ki = receiver_data.swb;
-        DebugLogger::getInstance()->log("Ki updated", LogLevel::DEBUG);
+        Logger::getInstance().log(LogLevel::INFO, "Ki updated");
         break;
     case CONTROLLER_MODE::KD_CALIBRATION:
         if (target_pid->kd == receiver_data.swb)
             return;
         target_pid->kd = receiver_data.swb;
-        DebugLogger::getInstance()->log("Kd updated", LogLevel::DEBUG);
+        Logger::getInstance().log(LogLevel::INFO, "Kd updated");
         break;
     default:
         break;
@@ -122,64 +123,26 @@ void FlightController::compute_attitude_pid(const Quaternion &errors, const PID 
                                             Output &output)
 {
     // Calcola gli output PID per l'attitudine
-    output.x = pid_attitude_x.pid(errors.x, dt, pid_offsets.kp, pid_offsets.ki, pid_offsets.kd);
-    output.y = pid_attitude_y.pid(errors.y, dt, pid_offsets.kp, pid_offsets.ki, pid_offsets.kd);
-    output.z = pid_attitude_z.pid(errors.z, dt, pid_offsets.kp, pid_offsets.ki, pid_offsets.kd);
+    float desired_gyro_x = pid_attitude_x.pid(errors.x, dt, pid_offsets.kp, pid_offsets.ki, pid_offsets.kd);
+    float desired_gyro_y = pid_attitude_y.pid(errors.y, dt, pid_offsets.kp, pid_offsets.ki, pid_offsets.kd);
+    float desired_gyro_z = pid_attitude_z.pid(errors.z, dt, pid_offsets.kp, pid_offsets.ki, pid_offsets.kd);
+    compute_gyro_pid({desired_gyro_x, desired_gyro_y, desired_gyro_z}, pid_offsets, dt, output);
 }
 
 void FlightController::logData(const Output &output)
 {
-    DebugLogger *logger = DebugLogger::getInstance();
-
-    // Output values (LogLevel::DATA)
-    logger->log("O_X", LogLevel::DATA, false);
-    logger->log(output.x, LogLevel::DATA, false);
-    logger->log("O_Y", LogLevel::DATA, false);
-    logger->log(output.y, LogLevel::DATA, false);
-    logger->log("O_Z", LogLevel::DATA, false);
-    logger->log(output.z, LogLevel::DATA, false);
-    logger->log("O_T", LogLevel::DATA, false);
-    logger->log(output.throttle, LogLevel::DATA, false);
-
-    // PID and error values (LogLevel::DATA_EXTRA)
-    logger->log("ErG_X", LogLevel::DATA_EXTRA, false);
-    logger->log(error_gyro.x, LogLevel::DATA_EXTRA, false);
-    logger->log("ErG_Y", LogLevel::DATA_EXTRA, false);
-    logger->log(error_gyro.y, LogLevel::DATA_EXTRA, false);
-    logger->log("ErG_Z", LogLevel::DATA_EXTRA, false);
-    logger->log(error_gyro.z, LogLevel::DATA_EXTRA, false);
-
-    logger->log("ErA_W", LogLevel::DATA_EXTRA, false);
-    logger->log(error_attitude.w, LogLevel::DATA_EXTRA, false);
-    logger->log("ErA_X", LogLevel::DATA_EXTRA, false);
-    logger->log(error_attitude.x, LogLevel::DATA_EXTRA, false);
-    logger->log("ErA_Y", LogLevel::DATA_EXTRA, false);
-    logger->log(error_attitude.y, LogLevel::DATA_EXTRA, false);
-    logger->log("ErA_Z", LogLevel::DATA_EXTRA, false);
-    logger->log(error_attitude.z, LogLevel::DATA_EXTRA, false);
-
-    logger->log("PIDG_X", LogLevel::DATA_EXTRA, false);
-    logger->log(pid_tuning_offset_gyro.kp, LogLevel::DATA_EXTRA, false);
-    logger->log("PIDG_Y", LogLevel::DATA_EXTRA, false);
-    logger->log(pid_tuning_offset_gyro.ki, LogLevel::DATA_EXTRA, false);
-    logger->log("PIDG_Z", LogLevel::DATA_EXTRA, false);
-    logger->log(pid_tuning_offset_gyro.kd, LogLevel::DATA_EXTRA, false);
-
-    logger->log("PIDA_X", LogLevel::DATA_EXTRA, false);
-    logger->log(pid_tuning_offset_attitude.kp, LogLevel::DATA_EXTRA, false);
-    logger->log("PIDA_Y", LogLevel::DATA_EXTRA, false);
-    logger->log(pid_tuning_offset_attitude.ki, LogLevel::DATA_EXTRA, false);
-    logger->log("PID_A_Z", LogLevel::DATA_EXTRA, false);
-    logger->log(pid_tuning_offset_attitude.kd, LogLevel::DATA_EXTRA, false);
 }
 
 void FlightController::control(double dt, ImuData &imu_data, ReceiverData &receiver_data,
                                Output &output, ASSIST_MODE assist_mode,
                                CONTROLLER_STATE state, CALIBRATION_TARGET calibration_target)
 {
-    if (assist_mode == ASSIST_MODE::MANUAL || error.IMU_ERROR)
+    if (assist_mode == ASSIST_MODE::MANUAL || error.IMU_ERROR){
+        output.x = receiver_data.x;
+        output.y = receiver_data.y;
+        output.z = receiver_data.z;
         return;
-
+}
     if (assist_mode == ASSIST_MODE::GYRO_STABILIZED)
     {
         compute_gyro_pid(error_gyro, pid_tuning_offset_gyro, dt, output);
@@ -192,12 +155,11 @@ void FlightController::control(double dt, ImuData &imu_data, ReceiverData &recei
     // Applica un fattore di riduzione per velocità elevate
     double forward_speed = imu_data.vel;
     double reduction_factor = 1.0;
-    if (abs(forward_speed) > FORWARD_SPEED_THRESHOLD)
-    {
-        reduction_factor = SERVO_REDUCTION_FACTOR +
-                           (1.0 - SERVO_REDUCTION_FACTOR) *
-                               (FORWARD_SPEED_THRESHOLD / abs(forward_speed));
-    }
+    reduction_factor = (forward_speed > 0)
+                           ? ((forward_speed <= FORWARD_SPEED_THRESHOLD)
+                                  ? 1.0 - (1.0 - SERVO_REDUCTION_FACTOR) * (forward_speed / FORWARD_SPEED_THRESHOLD)
+                                  : SERVO_REDUCTION_FACTOR)
+                           : 1.0;
 
     output.x *= reduction_factor;
     output.y *= reduction_factor;

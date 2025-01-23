@@ -1,0 +1,151 @@
+@startuml esp32_class_diagram
+
+title ESP32 ULM Class Diagram 
+
+class Actuator {
+    - int pin
+    - int pwm_min
+    - int pwm_max
+    - int pwm_null
+    - double digital_min
+    - double digital_max
+    --
+    + Actuator(int pin, int pwm_min, int pwm_max, int pwm_null, double digital_min, double digital_max)
+    + write(double value)
+}
+
+class Receiver {
+    - int rxPin
+    - ReceiverData receiver_data
+    - bool RECEIVER_ERROR
+    --
+    + Receiver(int rxPin)
+    + read(ReceiverData &data)
+    + logData(const ReceiverData &data)
+    + resetBuffer()
+    + decodeIBusPacket()
+}
+
+class IMU {
+    - ImuData imu_data
+    - bool IMU_ERROR
+    --
+    + read(ImuData &data)
+    + logData(const ImuData &data)
+}
+
+class LED {
+    - int pin
+    - LED_STATE state
+    --
+    + LED(int pin)
+    + set_state(LED_STATE state)
+    + update()
+}
+
+class RGB_LED {
+    - int pin_red
+    - int pin_green
+    - int pin_blue
+    - COLOR color
+    - LED_STATE state
+    --
+    + RGB_LED(int pin_red, int pin_green, int pin_blue)
+    + set_state(LED_STATE state, COLOR color)
+    + update()
+}
+
+class Aircraft {
+    - ImuData imu_data
+    - ReceiverData receiver_data
+    - Output output
+    - Errors error
+    --
+    + Aircraft()
+    + read_imu(Errors &error)
+    + read_receiver(Errors &error)
+    + update_leds(ASSIST_MODE assist_mode, CONTROLLER_STATE state)
+    + write_actuators()
+}
+
+class PIDController {
+    - double kp
+    - double ki
+    - double kd
+    - double maxIntegral
+    - double integral
+    - double lastError
+    --
+    + compute(double error, double dt, double kp_offset, double ki_offset, double kd_offset)
+}
+
+class FlightController {
+    - Aircraft aircraft
+    - CONTROLLER_STATE state
+    - ASSIST_MODE assist_mode
+    - CONTROLLER_MODE controller_mode
+    - CALIBRATION_TARGET calibration_target
+    - Errors error
+    --
+    + FlightController(Aircraft &aircraft)
+    + compute_data(double dt, ReceiverData &receiver_data, ImuData &imu_data, Output &output)
+    + control(double dt, ImuData &imu_data, ReceiverData &receiver_data, Output &output)
+    + check_errors()
+    + update_state(ReceiverData &receiver_data)
+    + update_modes(ReceiverData &receiver_data, bool imuSetupComplete)
+    + set_output(Output &output, ReceiverData &receiver_data, bool imuSetupComplete)
+}
+
+class SystemController {
+    - CONTROLLER_STATE state
+    - CONTROLLER_MODE mode
+    - ASSIST_MODE assist_mode
+    - CALIBRATION_TARGET calibration_target
+    - Errors error
+    - bool isFailsafeActive
+    --
+    + update_state(CONTROLLER_STATE newState)
+    + check_errors()
+    + resetFailsafe()
+    + update_modes(ReceiverData &receiver_data, bool imuSetupComplete)
+    + set_output(Output &output, ReceiverData &receiver_data, bool imuSetupComplete)
+    + failSafe()
+    + check_disarm_conditions(ReceiverData &receiver_data)
+    + check_arm_conditions(ReceiverData &receiver_data)
+}
+
+class WiFiManager {
+    - String ssid
+    - String password
+    - bool isConnected
+    - String discoveredServer
+    --
+    + begin(const char *ssid, const char *password)
+    + discoverServer(const char *serverName)
+    + isServerActive()
+    + WiFiConnectionTask(void *param)
+    + serverDiscoveryTask(void *param)
+    + serverCheckTask(void *param)
+}
+
+class Logger {
+    - String logBuffer
+    - String dataBuffer
+    --
+    + log(const std::string &message)
+    + sendLogToServer(const std::string &log)
+    + prepareDataBuffer()
+    + sendDataToServer()
+}
+
+Aircraft *-- Actuator : contains
+Aircraft *-- Receiver : contains
+Aircraft *-- LED : contains
+Aircraft *-- RGB_LED : contains
+Aircraft *-- IMU : contains
+
+FlightController *-- PIDController : contains
+
+
+
+@enduml

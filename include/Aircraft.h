@@ -9,70 +9,76 @@
 #include "DataStructures.h"
 #include "IMU.h"
 #include "Receiver.h"
-#include "esc.h"
-#include "ServoMotor.h"
 #include "LED.h"
+#include "Actuator.h"
 
 /**
  * @brief Classe principale per la gestione dell'aereo.
- * 
+ *
  * Incapsula i componenti hardware principali (ESC, motori, LED, IMU, ricevitore)
  * e fornisce metodi per la lettura dei sensori e il controllo degli attuatori.
  */
 class Aircraft
 {
 private:
-    ESC esc;                    ///< Controller elettronico per il motore principale.
-    ServoMotor servo_x, servo_y, servo_z; ///< Servocomandi per gli assi X, Y e Z.
-    Receiver receiver;          ///< Ricevitore per i comandi del pilota.
-    IMU bno055;                 ///< Sensore IMU (BNO055) per il controllo dell'assetto.
-    LED led_green, led_red, led_rgb; ///< LED per il feedback visivo dello stato del sistema.
+    Actuator esc, servo_x, servo_y, servo_z; ///< Servomotori per il controllo delle superfici di controllo.
+    Receiver receiver;                       ///< Ricevitore per i comandi del pilota.
+    LED led_red, led_green;                  ///< LED per il feedback visivo dello stato del sistema.
+    RGB_LED led_rgb;                         ///< LED RGB per il feedback visivo dello stato del sistema.
 
 public:
     /**
      * @brief Costruttore della classe Aircraft.
-     * 
+     *
      * Inizializza tutti i componenti hardware associati.
      */
     Aircraft();
 
     /**
      * @brief Legge i dati dall'IMU.
-     * 
+     *
      * Aggiorna la struttura `ImuData` e rileva eventuali errori.
-     * 
+     *
      * @param error Riferimento alla struttura degli errori per aggiornare lo stato dell'IMU.
      */
     void read_imu(Errors &error);
 
     /**
      * @brief Legge i dati dal ricevitore.
-     * 
+     *
      * Aggiorna la struttura `ReceiverData` e rileva eventuali errori.
-     * 
+     *
      * @param error Riferimento alla struttura degli errori per aggiornare lo stato del ricevitore.
+     * @param state Stato attuale del controller per la gestione dei failsafe.
      */
     void read_receiver(Errors &error);
 
     /**
      * @brief Aggiorna lo stato dei LED in base allo stato del sistema.
-     * 
-     * @param assist_mode Modalità di assistenza corrente.
+     *
+     * @param assist_mode Modalità di assistenza attuale.
      * @param state Stato attuale del controller.
-     * @param error Riferimento alla struttura degli errori.
      */
-    void update_leds(ASSIST_MODE assist_mode, CONTROLLER_STATE state, Errors error);
+    void update_leds(ASSIST_MODE assist_mode, CONTROLLER_STATE state);
 
     /**
      * @brief Scrive i valori sugli attuatori.
-     * 
+     *
      * Utilizza i dati di output per controllare i servocomandi e l'ESC.
      */
     void write_actuators();
 
+    /**
+     * @brief Aggiorna il logger dei dati.
+     *
+     * Se sono state effettuate letture dati, incrementa il ciclo.
+     */
+    void update_data_logger();
+
+    IMU imu;                    ///< Sensore inerziale (IMU).
     ImuData imu_data;           ///< Dati letti dall'IMU.
     ReceiverData receiver_data; ///< Dati ricevuti dal pilota.
-    Output output;              ///< Output per gli attuatori.
+    Output output;              ///< Output per i servocomandi e l'ESC.
 };
 
 #endif // AIRCRAFT_H

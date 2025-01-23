@@ -1,0 +1,50 @@
+@startuml esp32_setup_flowchart
+
+title ESP32 Main Setup Flowchart
+
+start
+:Inizializzazione della comunicazione seriale;
+
+group Logger
+  :Creazione e configurazione del Logger;
+  :Creazione del Singleton per Logger;
+  fork
+    :Avvio del task di logging (LogTask);
+  end fork
+end group
+
+group WiFiManager
+  :Creazione e configurazione del WiFiManager;
+  :Creazione del Singleton per WiFiManager;
+  :Avvio dei task di rete;
+  fork
+    :Connessione WiFi (WiFiConnectionTask);
+  fork again
+    :Discovery del server (ServerDiscoveryTask);
+  fork again
+    :Verifica stato del server (ServerCheckTask);
+  end fork
+end group
+
+group Aircraft
+  :Creazione di Aircraft;
+  :Inizializzazione dei componenti fisici
+  (IMU, Receiver, Actuator, LED, RGB_LED);
+end group
+
+group Controller
+  :Creazione di FlightController;
+  :Creazione di SystemController;
+end group
+
+group Configurazione
+  :Configurazione dei PID (Roll, Pitch, Yaw, Stabilizzazione);
+  :Inizializzazione e calibrazione dei sensori;
+end group
+
+:Impostazione dello stato iniziale ("disarmed");
+:Passaggio al loop principale;
+
+stop
+
+@enduml

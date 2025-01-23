@@ -77,6 +77,16 @@ enum class ASSIST_MODE
     ATTITUDE_CONTROL = 2, ///< Controllo dell'attitudine.
 };
 
+/**
+ * @brief Enumerazione per i livelli di log disponibili.
+ */
+enum class LogLevel
+{
+    ERROR,   ///< Errore critico.
+    WARNING, ///< Avvertimento.
+    INFO,    ///< Informazione.
+};
+
 /** @} */
 
 /** @defgroup Structures Strutture
@@ -137,10 +147,10 @@ struct Output
  */
 struct ImuData
 {
-    Euler gyro;        ///< Velocità angolari (giroscopio).
-    Euler accel;       ///< Accelerazioni lineari.
-    Quaternion quat;   ///< Orientamento (quaternione).
-    float vel;         ///< Velocità integrata.
+    Euler gyro;      ///< Velocità angolari (giroscopio).
+    Euler accel;     ///< Accelerazioni lineari.
+    Quaternion quat; ///< Orientamento (quaternione).
+    float vel;       ///< Velocità integrata.
 };
 
 /**
@@ -169,7 +179,6 @@ struct Errors
 {
     bool RECEIVER_ERROR; ///< Errore sul pilota.
     bool IMU_ERROR;      ///< Errore sull'IMU.
-    bool DATA_ERROR;     ///< Errore sul controllore.
 };
 
 /** @} */

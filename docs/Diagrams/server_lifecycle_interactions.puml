@@ -1,0 +1,56 @@
+@startuml server_lifecycle_interactions
+
+title Server Lifecycle and Interactions
+
+actor User
+actor ESP32
+participant "Server Launcher" as Launcher
+participant "Flask Server" as Server
+
+== Avvio del Server ==
+User -> Launcher : Comando "start"
+Launcher -> Server : Avvia server Flask (subprocess.Popen)
+Server -> Server : Registra servizio mDNS
+Server -> Server : Inizializza endpoint HTTP
+Server -> User : Conferma "Server avviato"
+
+== Trasmissione Dati ==
+ESP32 -> Server : POST /receive_logs
+Server -> Server : Salva log in display_logs, server_logs
+Server -> ESP32 : Risposta 200 OK
+
+ESP32 -> Server : POST /receive_data
+Server -> Server : Salva dati in server_data
+Server -> ESP32 : Risposta 200 OK
+
+== Visualizzazione Dati ==
+User -> Server : GET /get_logs
+Server -> User : Ritorna log in JSON
+
+User -> Server : GET /display_logs
+Server -> User : Ritorna pagina HTML aggiornata dinamicamente
+
+User -> Server : GET /get_data
+Server -> User : Ritorna dati in JSON
+
+== Manipolazione Dati ==
+User -> Server : GET /clear_server_logs
+Server -> Server : Cancella server_logs
+Server -> User : Risposta "Logs cancellati"
+
+User -> Server : GET /clear_display_logs
+Server -> Server : Cancella display_logs
+Server -> User : Risposta "Display logs cancellati"
+
+User -> Server : GET /clear_server_data
+Server -> Server : Cancella server_data
+Server -> User : Risposta "Dati cancellati"
+
+== Arresto del Server ==
+User -> Launcher : Comando "stop"
+Launcher -> Server : POST /shutdown
+Server -> Server : Arresta servizio mDNS
+Server -> Launcher : Conferma "Server arrestato"
+Launcher -> User : Conferma "Server fermato"
+
+@enduml

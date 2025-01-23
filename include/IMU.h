@@ -39,6 +39,8 @@ public:
    * @return false Se si è verificato un errore durante la lettura.
    */
   bool read(ImuData &data);
+
+  bool isSetupComplete = false;
 };
 
 #endif // IMU_H
