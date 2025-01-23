@@ -1,4 +1,4 @@
-@startuml
+@startuml class_uml
 
 class Actuator {
     - int pin
