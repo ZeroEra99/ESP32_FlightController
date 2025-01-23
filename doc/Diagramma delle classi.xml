@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <UML>
+  <Classes>
   <Class name="Actuator">
     <Attributes>
       <Attribute type="int" name="pin" />
@@ -184,4 +185,47 @@
       </Method>
     </Methods>
   </Class>
+  </Classes>
+  <Relationships>
+    <Relationship>
+      <Source>Aircraft</Source>
+      <Target>Receiver</Target>
+      <Type>association</Type>
+    </Relationship>
+    <Relationship>
+      <Source>Aircraft</Source>
+      <Target>RGB_LED</Target>
+      <Type>association</Type>
+    </Relationship>
+    <Relationship>
+      <Source>Aircraft</Source>
+      <Target>IMU</Target>
+      <Type>association</Type>
+    </Relationship>
+    <Relationship>
+      <Source>FlightController</Source>
+      <Target>Aircraft</Target>
+      <Type>aggregation</Type>
+    </Relationship>
+    <Relationship>
+      <Source>FlightController</Source>
+      <Target>SystemController</Target>
+      <Type>aggregation</Type>
+    </Relationship>
+    <Relationship>
+      <Source>SystemController</Source>
+      <Target>WiFiManager</Target>
+      <Type>association</Type>
+    </Relationship>
+    <Relationship>
+      <Source>FlightController</Source>
+      <Target>Logger</Target>
+      <Type>association</Type>
+    </Relationship>
+    <Relationship>
+      <Source>PIDController</Source>
+      <Target>FlightController</Target>
+      <Type>aggregation</Type>
+    </Relationship>
+  </Relationships>
 </UML>
