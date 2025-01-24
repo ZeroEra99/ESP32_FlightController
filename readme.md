@@ -1,9 +1,5 @@
 # ESP32 Aircraft Flight Controller
 
-
-# ESP32 Aircraft Flight Controller
-
-
 Questo progetto implementa un sistema di controllo di volo per aeromobili basato su ESP32, progettato nell'ambito di una tesi sperimentale presso l'Università degli Studi di Cagliari. Il sistema è progettato per garantire modularità e manutentabilità. L'architettura è composta da due componenti principali: un Flight Controller che gestisce l'aeromodello, e un Server remoto per il monitoraggio e la raccolta dati.
 
 ---
