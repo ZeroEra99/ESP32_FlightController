@@ -65,14 +65,15 @@ Il software di volo, in esecuzione su ESP32, è responsabile della stabilità e 
 ![Diagramma UML delle classi del Flight Controller (ESP32)](Diagrams/esp32_class_diagram.png)
 *Figura 4: Diagramma UML delle classi del Flight Controller (ESP32).*
 
+![Diagramma delle interazioni del Flight Controller (ESP32)](Diagrams/esp32_interactions.png)
+*Figura 5: Diagramma delle interazioni del Flight Controller (ESP32).*
+
 ![Diagramma di flusso della configurazione iniziale del Flight Controller](Diagrams/esp32_setup_flowchart.png)
-*Figura 5: Diagramma di flusso della configurazione iniziale del Flight Controller.*
+*Figura 6: Diagramma di flusso della configurazione iniziale del Flight Controller.*
 
 ![Diagramma di flusso del loop principale del Flight Controller](Diagrams/esp32_loop_flowchart.png)
-*Figura 6: Diagramma di flusso del loop principale del Flight Controller.*
+*Figura 7: Diagramma di flusso del loop principale del Flight Controller.*
 
 ![Diagramma di flusso dei task asincroni del Flight Controller](Diagrams/esp32_asynctasks_flowchart.png)
-*Figura 7: Diagramma di flusso dei task asincroni del Flight Controller.*
+*Figura 8: Diagramma di flusso dei task asincroni del Flight Controller.*
 
-![Diagramma delle interazioni del Flight Controller (ESP32)](Diagrams/esp32_lifecycle_interactions.png)
-*Figura 8: Diagramma delle interazioni del Flight Controller (ESP32).*
