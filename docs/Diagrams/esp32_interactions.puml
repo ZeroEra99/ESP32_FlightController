@@ -1,50 +1,39 @@
 @startuml esp32_interactions
 
-title ESP32 Sequence and Interactions Diagram
+title ESP32 Syncronous Loop Interactions
 
+participant "Actuators" as Actuator
+participant "LED" as LED
 participant "Receiver" as Receiver
 participant "IMU" as IMU
-participant "Actuator" as Actuator
-participant "LED" as LED
-participant "RGB_LED" as RGB_LED
 participant "Aircraft" as Aircraft
-participant "PIDController" as PIDController
 participant "FlightController" as FlightController
 participant "SystemController" as SystemController
-participant "WiFiManager" as WiFiManager
 participant "Logger" as Logger
 
 == Lettura sensori ==
 Receiver -> Aircraft : read(ReceiverData &data)
 IMU -> Aircraft : read(ImuData &data)
-Aircraft --> FlightController : set ImuData
-Aircraft --> SystemController : set ReceiverData
+Aircraft --> FlightController : set input data
+Aircraft --> SystemController : set input data
 
 == Controllo globale ==
 SystemController -> SystemController : update_state(CONTROLLER_STATE newState)
 SystemController -> SystemController : check_errors()
 SystemController -> SystemController : update_modes(ReceiverData)
-
-== Gestione del volo e controllo PID ==
 SystemController -> FlightController : State, Mode, Errors
-FlightController -> FlightController : compute_data(double dt, ReceiverData &receiver_data, ImuData &imu_data, Output &output)
+
+== Controllo del volo ==
 FlightController -> FlightController : control(dt, imu_data, receiver_data, output)
-FlightController -> PIDController : compute(error, dt, kp_offset, ki_offset, kd_offset)
-PIDController --> FlightController : return control value
 FlightController -> SystemController : pass control values
 
 == Aggiornamento output ==
 SystemController -> SystemController : set_output(Output &output, ReceiverData &receiver_data, bool imuSetupComplete)
-SystemController -> Aircraft : set Output values
-Aircraft -> Actuator : write(Output values)
+SystemController -> Aircraft : set output data
+Aircraft -> Actuator : write()
 Aircraft -> LED : update()
-Aircraft -> RGB_LED : update()
 
-== Logging e connessioni ==
-Logger -> all : log(String message)
-Logger -> SystemController : logData(ImuData, ReceiverData, PID, Output)
-WiFiManager -> Logger : provide connection and server health
-Logger -> WiFiManager : sendLogToServer(log)
-Logger -> WiFiManager : sendDataToServer(data)
+== Logging ==
+SystemController -> Logger : logData(ImuData, ReceiverData, PID, Output)
 
 @enduml
