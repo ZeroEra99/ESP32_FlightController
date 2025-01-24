@@ -19,8 +19,8 @@ Il server è progettato per ricevere e gestire i dati provenienti dal Flight Con
 - **Comunicazione:** implementa protocolli come HTTP e mDNS per la scoperta e lo scambio di dati.
 - **Interfaccia utente:** consente la visualizzazione dei dati in tempo reale tramite browser.
 
-*In figura: Diagramma delle interazioni del server.*
-![Diagramma delle interazioni del server](Diagrams/server_lifecycle_interactions.png)
+*In figura: Diagramma del lifecycle del server.*
+![Diagramma del lifecycle del server](Diagrams/server_lifecycle_interactions.png)
 
 ---
 
@@ -59,24 +59,24 @@ Il software di volo, in esecuzione su ESP32, è responsabile della stabilità e 
 ---
 
 ### Diagrammi principali
-![Diagramma a blocchi del software del Software](Diagrams/esp32_block_diagram.png)
-*Diagramma a blocchi del software del Software.*
+![Diagramma a blocchi](Diagrams/esp32_block_diagram.png)
+*Diagramma a blocchi.*
 
-![Diagramma UML delle classi del Software](Diagrams/esp32_class_diagram.png)
-*Diagramma UML delle classi del Software.*
+![Diagramma UML](Diagrams/esp32_class_diagram.png)
+*Diagramma UML.*
 
-![Diagramma delle interazioni del loop del software](Diagrams/esp32_interactions.png)
-*Diagramma delle interazioni del loop del software.*
+![Diagramma del Loop](Diagrams/esp32_interactions.png)
+*Diagramma del loop.*
 
-![Diagramma del lifecycle della classe Flight Controller](Diagrams/esp32_flightcontroller_lifecycle.png)
-*Diagramma del lifecycle della classe Flight Controller.*
+![Diagramma del lifecycle del Flight Controller](Diagrams/esp32_flightcontroller_lifecycle.png)
+*Diagramma del lifecycle del Flight Controller.*
 
-![Diagramma di flusso della configurazione iniziale del Software](Diagrams/esp32_setup_flowchart.png)
-*Diagramma di flusso della configurazione iniziale del Software.*
+![Diagramma di flusso del Setup](Diagrams/esp32_setup_flowchart.png)
+*Diagramma di flusso del Setup.*
 
-![Diagramma di flusso del loop principale del Software](Diagrams/esp32_loop_flowchart.png)
-*Diagramma di flusso del loop principale del Software.*
+![Diagramma di flusso del Loop](Diagrams/esp32_loop_flowchart.png)
+*Diagramma di flusso del loop.*
 
-![Diagramma di flusso dei task asincroni del Software](Diagrams/esp32_asynctasks_flowchart.png)
-*Diagramma di flusso dei task asincroni del Software.*
+![Diagramma di flusso dei task asincroni](Diagrams/esp32_asynctasks_flowchart.png)
+*Diagramma di flusso dei task asincroni.*
 
