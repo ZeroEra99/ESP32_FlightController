@@ -1,0 +1,46 @@
+@startuml esp32_flightcontroller_lifecycle
+
+title ESP32 Flight Controller Lifecycle
+
+participant "SystemController" as SC
+participant "FlightController" as FC
+participant "Aircraft" as AC
+
+
+== Inizializzazione ==
+SC -> FC : Istanziamento del FlightController
+FC -> FC : Configurazione parametri PID
+FC -> FC : Istanziamento PIDcontroller
+FC -> SC : FlightController inizializzato
+
+== Idle ==
+SC -> FC : Trasmette stato del sistema
+FC -> FC : Valuta lo stato del sistema
+alt Controller attivato
+    FC -> FC : Passa in Computing
+end
+
+== Computing ==
+AC -> FC : Trasmette dati di volo
+SC -> FC : Trasmette stato del sistema
+FC -> FC : Valuta lo stato del sistema
+
+alt Controller disattivato
+    FC -> FC : Torna in Idle
+end
+
+FC -> FC : Valuta la modalita' designata
+alt Stabilizzazione Giroscopica
+    FC -> FC : Calcolo dell'errore giroscopico
+    FC -> FC : Calcolo output servomotori tramite PIDcontroller
+end
+
+alt Controllo di Attitudine
+    FC -> FC : Calcolo dell'errore di attitudine
+    FC -> FC : Calcolo del setpoint giroscopico tramite PIDcontroller
+    FC -> FC : Stabilizzazione Giroscopica con setpoint calcolato
+end
+
+FC -> SC : Trasmette output servomotori
+
+@enduml
