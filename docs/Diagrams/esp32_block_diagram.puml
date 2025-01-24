@@ -2,34 +2,38 @@
 
 title Architettura a Blocchi - Software ESP32
 
-package "Input" {
+package "Input" as input {
     rectangle "IMU" as imu
     note right of imu
-        Raccolta dei dati inerziali (velocita' 
+        Raccolta dei dati inerziali (velocita'
         angolare, accelerazioni e orientamento)
     end note
 
     rectangle "Ricevitore" as receiver
     note right of receiver
-        Acquisizione dei comandi inviati dal pilota 
+        Acquisizione dei comandi inviati dal pilota
         tramite stick, switch e potenziometri
     end note
 }
 
-package "Elaborazione" {
-    rectangle "Gestione Stato e Modalita'" as state_mode
-    note right of state_mode
+package "Elaborazione" as elaborazione {
+    rectangle "Controllo del sistema" as system_controller
+    note right of system_controller
         Gestione degli stati operativi (ARMATO/DISARMATO) e delle
         modalita' di assistenza (manuale, stabilizzazione, attitudine)
     end note
 
-    rectangle "Controllo PID" as pid_control
-    note right of pid_control
+    rectangle "Controllo del volo" as flight_controller
+    note right of flight_controller
+        Elaborazione dei dati in ingresso per il controllo del volo
         Calcolo degli output per il controllo degli attuatori
     end note
+
+    system_controller --> flight_controller : Modalita' operativa ed errori
+    flight_controller --> system_controller : Output PID
 }
 
-package "Output" {
+package "Output" as output {
     rectangle "Attuatori" as actuators
     note right of actuators
         Applicazione dei comandi ai servomotori e
@@ -42,7 +46,7 @@ package "Output" {
     end note
 }
 
-package "Logging" {
+package "Logging" as logging {
     rectangle "Logger" as logger
     note right of logger
         Raccolta e formattazione dei dati diagnostici
@@ -50,7 +54,7 @@ package "Logging" {
     end note
 }
 
-package "Comunicazione" {
+package "Comunicazione" as comunicazione {
     rectangle "WiFiManager" as wifi
     note right of wifi
         Configurazione e gestione della connessione WiFi
@@ -67,14 +71,14 @@ package "Comunicazione" {
     end note
 }
 
-imu --> state_mode : Dati inerziali
-receiver --> state_mode : Comandi pilota
-state_mode --> pid_control : Stato operativo e setpoint
-pid_control --> actuators : Comandi per attuatori
-state_mode --> leds : Modalità operativa
-pid_control --> logger : Dati diagnostici
-logger --> wifi : Trasmissione log
-wifi --> mdns : Annuncio del server
-wifi --> http_client : Trasmissione dati al server
+node "Dati di ingresso" as input_data
+node "Dati di uscita" as output_data
+
+input --> input_data : Lettura e normalizzazione
+input_data --> elaborazione : Dati IMU e Ricevitore
+elaborazione -right--> logging : Messaggi diagnostici e Dati operativi
+logging --> comunicazione : Trasmissione dati
+elaborazione --down-> output_data : Output attuatori
+output_data -down-> output : Comandi attuatori
 
 @enduml

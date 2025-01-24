@@ -50,8 +50,6 @@ endif
 
 :Inserisci dati nei buffer del Logger;
 
-:Fine ciclo;
-
 stop
 
 @enduml
