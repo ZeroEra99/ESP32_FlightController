@@ -1,6 +1,5 @@
 .pio
 .vscode
 .vscode/*
-.docs/LaTeX/*
 script.py
 platformio.ini
