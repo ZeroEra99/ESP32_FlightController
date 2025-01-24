@@ -1,56 +1,80 @@
 @startuml esp32_block_diagram
 
+title Architettura a Blocchi - Software ESP32
+
 package "Input" {
-  [IMU] : Sensore inerziale
-  [Receiver] : Riceve input remoti
-  [IMU] --> [System Controller] : Dati di orientamento
-  [IMU] --> [Flight Controller] : Dati inerziali per stabilizzazione
-  [Receiver] --> [System Controller] : Comandi utente
-  [Receiver] --> [Flight Controller] : Input per controllo attitudine
+    rectangle "IMU" as imu
+    note right of imu
+        Raccolta dei dati inerziali (velocita' 
+        angolare, accelerazioni e orientamento)
+    end note
+
+    rectangle "Ricevitore" as receiver
+    note right of receiver
+        Acquisizione dei comandi inviati dal pilota 
+        tramite stick, switch e potenziometri
+    end note
 }
 
 package "Elaborazione" {
-  [System Controller] : Supervisione del sistema
-  [Flight Controller] : Controllo volo e stabilizzazione
-  [System Controller] --> [Flight Controller] : Coordina modalità e input
-  note right of [System Controller]
-    Verifica errori
-    Aggiorna stato e modalità operative
-  end note
-  [Flight Controller] --> [Actuator] : Calcoli PID per attuatori
-  note right of [Flight Controller]
-    Stabilizzazione giroscopica
-    Controllo attitudine
-    Calcolo offset PID
-  end note
+    rectangle "Gestione Stato e Modalita'" as state_mode
+    note right of state_mode
+        Gestione degli stati operativi (ARMATO/DISARMATO) e delle
+        modalita' di assistenza (manuale, stabilizzazione, attitudine)
+    end note
+
+    rectangle "Controllo PID" as pid_control
+    note right of pid_control
+        Calcolo degli output per il controllo degli attuatori
+    end note
 }
 
 package "Output" {
-  [Actuator] : Controlla motori e servocomandi
-  [LED] : Indicazione stato
-  [RGB_LED] : Indicazione modalità
-  [Actuator] <-- [Flight Controller] : Comandi calcolati
-  [LED] <-- [System Controller] : Stato visivo
-  [RGB_LED] <-- [System Controller] : Modalità visiva
+    rectangle "Attuatori" as actuators
+    note right of actuators
+        Applicazione dei comandi ai servomotori e
+        agli ESC per il controllo dei movimenti
+    end note
+
+    rectangle "LED/RGB" as leds
+    note right of leds
+        Fornitura di feedback visivo sugli stati operativi
+    end note
 }
 
 package "Logging" {
-  [Logger] : Registra dati e log
-  [Logger] --> [WiFiManager] : Invio log e dati
-  note right of [Logger]
-    Formatta messaggi di log
-    Prepara dati per analisi
-  end note
+    rectangle "Logger" as logger
+    note right of logger
+        Raccolta e formattazione dei dati diagnostici
+        e operativi per il monitoraggio remoto
+    end note
 }
 
 package "Comunicazione" {
-  [WiFiManager] : Gestisce connessioni
-  [WiFiManager] --> "Server Remoto" : Scambio dati
-  note right of [WiFiManager]
-    Connessione WiFi
-    Scoperta server (mDNS)
-    Comunicazione HTTP
-  end note
+    rectangle "WiFiManager" as wifi
+    note right of wifi
+        Configurazione e gestione della connessione WiFi
+    end note
+
+    rectangle "mDNS" as mdns
+    note right of mdns
+        Scoperta del server sulla rete locale
+    end note
+
+    rectangle "HTTP Client" as http_client
+    note right of http_client
+        Trasmissione dei dati e log al server tramite richieste HTTP
+    end note
 }
+
+imu --> state_mode : Dati inerziali
+receiver --> state_mode : Comandi pilota
+state_mode --> pid_control : Stato operativo e setpoint
+pid_control --> actuators : Comandi per attuatori
+state_mode --> leds : Modalità operativa
+pid_control --> logger : Dati diagnostici
+logger --> wifi : Trasmissione log
+wifi --> mdns : Annuncio del server
+wifi --> http_client : Trasmissione dati al server
 
 @enduml
