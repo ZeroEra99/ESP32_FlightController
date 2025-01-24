@@ -9,9 +9,6 @@ La piattaforma si compone di due componenti principali: un Flight Controller bas
 ![Diagramma a blocchi del sistema](Diagrams/system_block_diagram.png)
 *Figura 1: Diagramma a blocchi del sistema.*
 
-![Diagramma delle interazioni ESP32-Server](Diagrams/esp32_interactions.png)
-*Figura 2: Diagramma delle interazioni ESP32-Server.*
-
 ---
 
 ## Architettura del server
@@ -23,7 +20,7 @@ Il server è progettato per ricevere e gestire i dati provenienti dal Flight Con
 - **Interfaccia utente:** consente la visualizzazione dei dati in tempo reale tramite browser.
 
 ![Diagramma delle interazioni del server](Diagrams/server_lifecycle_interactions.png)
-*Figura 3: Diagramma delle interazioni del server.*
+*Figura 2: Diagramma delle interazioni del server.*
 
 ---
 
@@ -63,16 +60,19 @@ Il software di volo, in esecuzione su ESP32, è responsabile della stabilità e 
 
 ### Diagrammi principali
 ![Diagramma a blocchi del software del Flight Controller (ESP32)](Diagrams/esp32_block_diagram.png)
-*Figura 4: Diagramma a blocchi del software del Flight Controller (ESP32)
+*Figura 3: Diagramma a blocchi del software del Flight Controller (ESP32).*
 
 ![Diagramma UML delle classi del Flight Controller (ESP32)](Diagrams/esp32_class_diagram.png)
-*Figura 5: Diagramma UML delle classi del Flight Controller (ESP32).*
+*Figura 4: Diagramma UML delle classi del Flight Controller (ESP32).*
 
 ![Diagramma di flusso della configurazione iniziale del Flight Controller](Diagrams/esp32_setup_flowchart.png)
-*Figura 6: Diagramma di flusso della configurazione iniziale del Flight Controller.*
+*Figura 5: Diagramma di flusso della configurazione iniziale del Flight Controller.*
 
 ![Diagramma di flusso del loop principale del Flight Controller](Diagrams/esp32_loop_flowchart.png)
-*Figura 7: Diagramma di flusso del loop principale del Flight Controller.*
+*Figura 6: Diagramma di flusso del loop principale del Flight Controller.*
 
 ![Diagramma di flusso dei task asincroni del Flight Controller](Diagrams/esp32_asynctasks_flowchart.png)
-*Figura 8: Diagramma di flusso dei task asincroni del Flight Controller.*
+*Figura 7: Diagramma di flusso dei task asincroni del Flight Controller.*
+
+![Diagramma delle interazioni del Flight Controller (ESP32)](Diagrams/esp32_lifecycle_interactions.png)
+*Figura 8: Diagramma delle interazioni del Flight Controller (ESP32).*
