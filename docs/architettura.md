@@ -19,8 +19,8 @@ Il server è progettato per ricevere e gestire i dati provenienti dal Flight Con
 - **Comunicazione:** implementa protocolli come HTTP e mDNS per la scoperta e lo scambio di dati.
 - **Interfaccia utente:** consente la visualizzazione dei dati in tempo reale tramite browser.
 
-*In figura: Diagramma del lifecycle del server.*
 ![Diagramma del lifecycle del server](Diagrams/server_lifecycle_interactions.png)
+*In figura: Diagramma del lifecycle del server.*
 
 ---
 
