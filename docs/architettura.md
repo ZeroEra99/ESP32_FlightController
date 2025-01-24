@@ -36,6 +36,8 @@ Il software di volo, in esecuzione su ESP32, è responsabile della stabilità e 
 - Verifica e gestione degli errori.
 - Aggiornamento dello stato e delle modalità operative.
 - Calcolo PID per stabilizzazione giroscopica e controllo attitudine.
+![Diagramma delle operazioni del blocco 'Elaborazione'](Diagrams/esp32_flightcontroller_lifecycle.png)
+*Diagramma delle operazioni del blocco 'Elaborazione'.*
 
 #### Output:
 - Scrittura dei valori sugli attuatori per il controllo dei motori.
@@ -58,18 +60,12 @@ Il software di volo, in esecuzione su ESP32, è responsabile della stabilità e 
 
 ---
 
-### Diagrammi principali
+### Altri diagrammi
 ![Diagramma a blocchi](Diagrams/esp32_block_diagram.png)
 *Diagramma a blocchi.*
 
 ![Diagramma UML](Diagrams/esp32_class_diagram.png)
 *Diagramma UML.*
-
-![Diagramma delle operazioni sincrone del Loop principale](Diagrams/esp32_interactions.png)
-*Diagramma delle operazioni sincrone del Loop principale.*
-
-![Diagramma delle operazioni del Flight Controller](Diagrams/esp32_flightcontroller_lifecycle.png)
-*Diagramma delle operazioni del Flight Controller.*
 
 ![Diagramma di flusso del Setup](Diagrams/esp32_setup_flowchart.png)
 *Diagramma di flusso del Setup.*

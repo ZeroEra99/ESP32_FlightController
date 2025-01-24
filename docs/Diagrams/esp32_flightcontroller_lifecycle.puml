@@ -1,6 +1,6 @@
 @startuml esp32_flightcontroller_lifecycle
 
-title ESP32 Architectur's 'Computing' block interaction diagram
+title ESP32 Flight Controller (Blocco Elaborazione)
 
 participant "SystemController" as SC
 participant "FlightController" as FC
@@ -14,9 +14,9 @@ FC -> FC : Istanziamento PIDcontroller
 FC -> SC : FlightController inizializzato
 
 == Idle ==
-SC -> SC : Analizza stato del sistema, modalità
-SC -> FC : Trasmette stato del sistema e modalità
-FC -> FC : Valuta lo stato del sistema e modalità
+SC -> SC : Analizza stato del sistema, modalita'
+SC -> FC : Trasmette stato del sistema e modalita'
+FC -> FC : Valuta lo stato del sistema e modalita'
 alt Controller attivato
     FC -> FC : Passa in Computing
 end
@@ -44,12 +44,12 @@ end
 == Logiche di Sicurezza ==
 alt Errore IMU
     AC -> SC : Notifica errore IMU
-    FC -> FC : Forza modalità Manuale
+    FC -> FC : Forza modalita' Manuale
 end
 
 alt Errore Ricevitore
     AC -> SC : Notifica errore Ricevitore
-    FC -> FC : Forza modalità Controllo di Attitudine
+    FC -> FC : Forza modalita' Controllo di Attitudine
 
 end
 
@@ -64,8 +64,5 @@ alt Modalita' Calibrazione Attivata
     SC -> FC : Fornisce offset per asse target (X, Y, Z)
     FC -> FC : Applica l'offset ai parametri PID
 end
-
-== Aggiornamento Output ==
-SC -> AC : Trasmette output attuatori e LED
 
 @enduml
