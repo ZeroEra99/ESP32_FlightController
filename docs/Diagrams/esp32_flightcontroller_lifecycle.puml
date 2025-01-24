@@ -1,34 +1,34 @@
 @startuml esp32_flightcontroller_lifecycle
 
-title ESP32 Flight Controller Lifecycle
+title ESP32 Architectur's 'Computing' block interaction diagram
 
 participant "SystemController" as SC
 participant "FlightController" as FC
 participant "Aircraft" as AC
 
-
 == Inizializzazione ==
+SC -> SC : Inizializzazione del sistema
 SC -> FC : Istanziamento del FlightController
 FC -> FC : Configurazione parametri PID
 FC -> FC : Istanziamento PIDcontroller
 FC -> SC : FlightController inizializzato
 
 == Idle ==
-SC -> FC : Trasmette stato del sistema
-FC -> FC : Valuta lo stato del sistema
+SC -> SC : Analizza stato del sistema, modalità
+SC -> FC : Trasmette stato del sistema e modalità
+FC -> FC : Valuta lo stato del sistema e modalità
 alt Controller attivato
     FC -> FC : Passa in Computing
 end
 
 == Computing ==
-AC -> FC : Trasmette dati di volo
-SC -> FC : Trasmette stato del sistema
-FC -> FC : Valuta lo stato del sistema
-
 alt Controller disattivato
     FC -> FC : Torna in Idle
 end
 
+AC -> FC : Trasmette dati di volo
+
+== Modalità Operative ==
 FC -> FC : Valuta la modalita' designata
 alt Stabilizzazione Giroscopica
     FC -> FC : Calcolo dell'errore giroscopico
@@ -41,6 +41,31 @@ alt Controllo di Attitudine
     FC -> FC : Stabilizzazione Giroscopica con setpoint calcolato
 end
 
-FC -> SC : Trasmette output servomotori
+== Logiche di Sicurezza ==
+alt Errore IMU
+    AC -> SC : Notifica errore IMU
+    FC -> FC : Forza modalità Manuale
+end
+
+alt Errore Ricevitore
+    AC -> SC : Notifica errore Ricevitore
+    FC -> FC : Forza modalità Controllo di Attitudine
+
+end
+
+alt Errore Critico
+    AC -> SC : Notifica stato Failsafe
+    SC -> SC : Forza stato Failsafe
+    FC -> FC : Sovrascrive output con costanti di emergenza
+end
+
+== Calibrazione ==
+alt Modalita' Calibrazione Attivata
+    SC -> FC : Fornisce offset per asse target (X, Y, Z)
+    FC -> FC : Applica l'offset ai parametri PID
+end
+
+== Aggiornamento Output ==
+SC -> AC : Trasmette output attuatori e LED
 
 @enduml
